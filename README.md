@@ -178,6 +178,58 @@ Sync color values in `references/style-light.md` and `references/style-dark.md`.
 
 Your Skill now has your own brand identity.
 
+## Configuration Reference
+
+### Mermaid Engine Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| `-s` | `3` | 3x scale for high-resolution output |
+| `-w` | `1600` | 1600px width |
+| `-b` | `white` | White background (light style) |
+| `-t` | `neutral` | Neutral theme |
+
+**Full command:**
+```bash
+mmdc -i input.mmd -o output.png -s 3 -w 1600 -b white
+```
+
+**Mermaid Best Practices:**
+
+This skill follows the style guidelines from [mermaid-visualizer](https://github.com/axtonliu/axton-obsidian-visual-skills):
+
+- Use `subgraph id["Display Name"]` format for groups with spaces
+- Reference nodes by ID, not display text
+- Avoid `number. space` patterns (use `①②③` or `(1)(2)(3)` instead)
+- Apply consistent color coding per layer/category
+- Use `direction LR` inside subgraphs for horizontal layouts
+
+### Gemini Engine Parameters
+
+| Parameter | Value | Description |
+|-----------|-------|-------------|
+| Model | `gemini-3-pro-image-preview` | 2K quality, best for illustrations |
+| Content Aspect | 3:4 portrait | Optimized for article embedding |
+| Cover Aspect | 16:9 landscape | Platform-ready cover format |
+| Cover Text | **None** | Clean visual, title shown by platform |
+
+### Brand Color Palette (Default: Axton Brand)
+
+| Name | Hex | Usage |
+|------|-----|-------|
+| Deep Space Violet | `#2F2B42` | Core color, dark backgrounds |
+| Amber | `#F59E0B` | Accent, highlights, Skills layer |
+| Sky Blue | `#38BDF8` | Accent, secondary highlights, Agents layer |
+| Light Gray | `#F8F9FA` | Light backgrounds, neutral elements |
+
+### Style Files
+
+| File | Purpose | Aspect |
+|------|---------|--------|
+| `references/style-light.md` | Content illustrations (default) | 3:4 portrait |
+| `references/style-dark.md` | Cover images | 16:9 landscape |
+| `references/brand-colors.md` | Color palette reference | - |
+
 ## Cost
 
 When using Gemini API for auto-generation:

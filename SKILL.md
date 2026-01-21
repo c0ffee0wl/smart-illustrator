@@ -1,49 +1,62 @@
 ---
 name: smart-illustrator
-description: 智能文章配图策划师。分析文章内容，识别最佳配图位置，根据内容类型选择合适的配图形式（概念图、流程图、对比图、数据图、场景图、要点图），输出可直接用于 Gemini 等 AI 绘图工具的批量 prompt。使用 Axton 签名视觉风格。触发词：配图、插图、illustrate、为文章画图、生成配图。
+description: 智能配图与 PPT 信息图生成器。支持两种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT。
 ---
 
-# Smart Illustrator - 智能文章配图策划师
+# Smart Illustrator - 智能配图与 PPT 生成器
 
-将文章内容转化为可直接用于 AI 绘图的配图方案。
+支持两种模式：
+1. **文章配图模式**（默认）：为文章生成插图
+2. **PPT/Slides 模式**：将内容转化为批量信息图 JSON prompt
 
 ## 使用方式
 
+### 文章配图模式（默认）
+
 ```bash
-# 分析文章并自动生成配图（默认行为）
+# 分析文章并自动生成配图
 /smart-illustrator path/to/article.md
 
 # 只输出 prompt，不自动生成图片
 /smart-illustrator path/to/article.md --prompt-only
 
-# 指定风格（从 styles/ 目录加载）
+# 指定风格
 /smart-illustrator path/to/article.md --style light     # 浅色清爽（默认）
 /smart-illustrator path/to/article.md --style dark      # 深色科技
-/smart-illustrator path/to/article.md --style minimal   # 极简风格
-
-# 列出可用风格
-/smart-illustrator --list-styles
 
 # 不生成封面图
 /smart-illustrator path/to/article.md --no-cover
-
-# 指定配图数量
-/smart-illustrator path/to/article.md --count 5
-
-# 直接输入内容
-/smart-illustrator
-[粘贴文章内容]
 ```
+
+### PPT/Slides 模式
+
+```bash
+# 生成 PPT 信息图 JSON prompt
+/smart-illustrator path/to/script.md --mode slides
+
+# 或直接说"生成PPT"、"生成幻灯片"
+请使用 smart-illustrator 为 xxx.md 生成 PPT
+```
+
+**PPT 模式输出**：JSON 格式的 prompt 文件，可直接复制到 Gemini 生成批量信息图。
+
+**PPT 模式规则**：
+- 按信息密度和重要性分割内容（不是机械按 H2 标题）
+- 金句/重点：哪怕内容少也单独一张
+- 并列内容：合并成一张（如"价值1、2、3"→ 一张图）
+- 使用 `topic` + `content` 结构，让 Gemini 自由设计标题和构图
+- 完整传递 style prompt，不要简化
 
 ### 参数说明
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
+| `--mode` | `article` | 模式：`article`（文章配图）或 `slides`（PPT 信息图） |
 | `--prompt-only` | `false` | 只输出 prompt，不自动调用 API 生成图片 |
 | `--style` | `light` | 风格名称，加载 `styles/style-{name}.md` |
 | `--list-styles` | - | 列出 `styles/` 目录下所有可用风格 |
-| `--no-cover` | `false` | 不生成封面图 |
-| `--count` | 自动 | 指定配图数量（默认根据文章长度自动判断） |
+| `--no-cover` | `false` | 不生成封面图（仅 article 模式） |
+| `--count` | 自动 | 指定配图数量（仅 article 模式） |
 
 ## 核心能力
 

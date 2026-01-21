@@ -61,22 +61,35 @@ description: 智能配图与 PPT 信息图生成器。支持两种模式：(1) �
 
 ```json
 {
-  "task": "请按以下指令为我生成 N 张独立的信息图。",
-  "important": "不要合并在一起，每一张图片是一个单独的绘图任务。格式：16:9 横版。",
-  "style": "[从 styles/style-light.md 读取完整内容，原样放入]",
-  "picture_1": {
-    "topic": "主题方向（不是最终标题，Gemini 自行设计标题）",
-    "content": "原始内容（不要提炼摘要，保留完整信息）"
+  "instruction": "请逐条生成以下 N 张独立信息图。每个 picture 对应 1 张图，严禁合并。",
+  "batch_rules": {
+    "total": "N（实际图片数量）",
+    "one_item_one_image": true,
+    "aspect_ratio": "16:9",
+    "do_not_merge": true
   },
-  "picture_2": {
-    "topic": "...",
-    "content": "..."
-  }
+  "fallback": "如果无法一次生成全部图片：请输出 N 条独立的单图绘图指令（编号 1-N），每条可单独执行，必须包含完整 style 和水印要求。",
+  "style": "[从 styles/style-light.md 读取完整内容，原样放入]",
+  "pictures": [
+    {
+      "id": 1,
+      "topic": "封面",
+      "content": "系列名称\n\n第N节：章节标题\n\n学习目标：..."
+    },
+    {
+      "id": 2,
+      "topic": "主题方向（不是最终标题，Gemini 自行设计标题）",
+      "content": "原始内容（不要提炼摘要，保留完整信息）"
+    }
+  ]
 }
 ```
 
 **格式要点**：
-- 使用 `picture_1`、`picture_2`... 字段，**不要**用 `slides` 数组 + `id`
+- 使用 `pictures` 数组 + `id` 字段（数组结构让模型更容易进入"逐条执行"模式）
+- `instruction` 放最前面，用自然语言明确"逐条生成"
+- `batch_rules` 用机器可读格式强调批处理规则
+- `fallback` 提供降级策略：如果无法批量生成，输出可单独执行的指令
 - **不要**添加 `metadata`、`visual_suggestion` 等额外字段
 - `style` 字段必须包含完整的 style prompt（从 styles/ 目录读取）
 - `topic` 只是主题方向，Gemini 根据 content 自行设计图片标题

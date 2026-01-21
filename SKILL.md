@@ -45,7 +45,35 @@ description: 智能配图与 PPT 信息图生成器。支持两种模式：(1) �
 - 金句/重点：哪怕内容少也单独一张
 - 并列内容：合并成一张（如"价值1、2、3"→ 一张图）
 - 使用 `topic` + `content` 结构，让 Gemini 自由设计标题和构图
+- **不要**指定 `visual_suggestion` 或构图建议
 - 完整传递 style prompt，不要简化
+
+**PPT 模式 JSON 格式（必须严格遵守）**：
+
+```json
+{
+  "task": "请按以下指令为我生成 N 张独立的信息图。",
+  "important": "不要合并在一起，每一张图片是一个单独的绘图任务。格式：16:9 横版。",
+  "style": "[从 styles/style-light.md 读取完整内容，原样放入]",
+  "picture_1": {
+    "topic": "主题方向（不是最终标题，Gemini 自行设计标题）",
+    "content": "原始内容（不要提炼摘要，保留完整信息）"
+  },
+  "picture_2": {
+    "topic": "...",
+    "content": "..."
+  }
+}
+```
+
+**格式要点**：
+- 使用 `picture_1`、`picture_2`... 字段，**不要**用 `slides` 数组 + `id`
+- **不要**添加 `metadata`、`visual_suggestion` 等额外字段
+- `style` 字段必须包含完整的 style prompt（从 styles/ 目录读取）
+- `topic` 只是主题方向，Gemini 根据 content 自行设计图片标题
+- `content` 保留原始内容，不要提炼成摘要
+
+完整示例见 `references/slides-prompt-example.json`
 
 ### 参数说明
 

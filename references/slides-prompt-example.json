@@ -1,5 +1,5 @@
 {
-  "instruction": "请为我绘制 7 张图片（generate 7 images）。你是一位「信息图 + 幻灯片视觉导演」。请逐条执行 pictures 数组：每个 id 对应 1 张独立的 16:9 信息图，严禁合并，严禁只输出文字描述。",
+  "instruction": "请为我绘制 7 张图片（generate 7 images）。你是一位「信息图绘制者」。请逐条执行 pictures 数组：每个 id 对应 1 张独立的 16:9 信息图，严禁合并，严禁只输出文字描述。",
   "batch_rules": {
     "total": 7,
     "one_item_one_image": true,

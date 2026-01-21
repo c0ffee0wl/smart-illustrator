@@ -155,7 +155,10 @@ The key to successful batch generation is using `picture_N` fields (not array wi
 
 3. **Pass complete style** - Include the full style prompt from `styles/style-light.md`, don't summarize.
 
-4. **Content granularity** - Split by H2 headers, not every paragraph. ~9 images for a 12-minute video script.
+4. **Content granularity** - Judge by information density and importance, not mechanically by H2 headers:
+   - **Key insights / golden quotes**: Even if short, deserve a standalone slide (e.g., "没有银弹")
+   - **Parallel items**: Merge into one slide (e.g., "价值1、2、3" → one slide with 3 points)
+   - Goal: Each slide should have balanced information — not too much, not too little
 
 5. **Don't specify composition** - Only provide `topic` (theme direction) + `content`. Let Gemini design the visual layout and choose the title text.
 

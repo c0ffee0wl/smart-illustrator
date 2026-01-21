@@ -73,7 +73,10 @@ description: 智能配图与 PPT 信息图生成器。支持两种模式：(1) �
 - `topic` 只是主题方向，Gemini 根据 content 自行设计图片标题
 - `content` 保留原始内容，不要提炼成摘要
 
-完整示例见 `references/slides-prompt-example.json`
+**⚠️ 生成 JSON 前必须执行**：
+1. 先读取 `references/slides-prompt-example.json` 作为格式参考
+2. 严格按照示例的结构生成，不要自创格式
+3. 从 `styles/style-light.md` 读取完整 style 内容放入 JSON
 
 ### 参数说明
 

@@ -19,10 +19,12 @@ Intelligent article illustration Skill for Claude Code with **dual-engine system
 - **Dual Engine System**: Auto-selects Mermaid or Gemini based on content type
 - **Smart Position Detection**: Analyzes article structure to identify optimal illustration points
 - **10+ Illustration Types**: flowchart, sequence, mindmap, concept, comparison, scene, metaphor...
-- **Extensible Style System**: Light, Dark, Minimal, and custom styles
-- **Cover Generation**: 16:9 landscape, no text, platform-ready
+- **Extensible Style System**: Light, Dark, Minimal, Cover, and custom styles
+- **Cover Mode**: Generate high-CTR YouTube thumbnails with best practices built-in
+- **Multi-Platform Sizes**: YouTube, WeChat, Twitter, Xiaohongshu presets
+- **Resume Generation**: Skip already-generated images, regenerate specific ones
 - **Brand Customizable**: Modify `styles/` to apply your brand style
-- **Multiple Backends**: Mermaid CLI for diagrams, Gemini API for creative visuals
+- **Multiple Backends**: Mermaid CLI for diagrams, Gemini API for creative visuals (2K resolution)
 
 ## What Are Skills?
 
@@ -82,12 +84,15 @@ cp -r smart-illustrator/styles ~/.claude/skills/smart-illustrator/
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `--mode` | `article` | Mode: `article` (illustrations), `slides` (PPT infographics), `match` (reuse images) |
+| `--mode` | `article` | Mode: `article`, `slides`, `match`, or `cover` |
 | `--images` | - | Image directory path (required for match mode) |
+| `--platform` | `youtube` | Cover platform: `youtube`/`wechat`/`twitter`/`xiaohongshu`/`landscape`/`square` |
+| `--topic` | - | Cover topic (alternative to article path, cover mode only) |
+| `--description` | - | Cover visual direction (cover mode only) |
 | `--prompt-only` | `false` | Output prompts only, don't call API to generate images |
 | `--style` | `light` | Style name, loads `styles/style-{name}.md` |
 | `--list-styles` | - | List all available styles in `styles/` directory |
-| `--no-cover` | `false` | Skip cover image generation |
+| `--no-cover` | `false` | Skip cover image generation (article mode) |
 | `--count` | auto | Number of illustrations (auto-determined by article length) |
 
 ### Illustration Count Guidelines
@@ -153,6 +158,10 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
 | `-m, --model` | Model (default: gemini-3-pro-image-preview) |
 | `-d, --delay` | Delay between requests in ms (default: 2000) |
 | `-p, --prefix` | Filename prefix (default: from config filename) |
+| `-r, --regenerate` | Regenerate specific images (e.g., "3" or "3,5,7") |
+| `-f, --force` | Force regenerate all images (ignore existing) |
+
+**Resume Generation**: By default, the script skips images that already exist in the output directory. This allows resuming interrupted generation without re-generating completed images.
 
 Output: `{prefix}-01.png`, `{prefix}-02.png`, etc.
 
@@ -292,6 +301,52 @@ Reuse existing PPT images for article illustrations without regenerating.
 
 ---
 
+## Cover Mode (YouTube Thumbnails)
+
+Generate high-CTR cover images for YouTube, WeChat, Twitter, and more. Built on YouTuber best practices research.
+
+```bash
+# Generate YouTube thumbnail from article
+/smart-illustrator path/to/article.md --mode cover --platform youtube
+
+# Generate with specific topic
+/smart-illustrator --mode cover --platform youtube --topic "Claude 4 Deep Review"
+
+# Generate with visual direction
+/smart-illustrator --mode cover --platform wechat --description "Comparison diagram + tech aesthetic"
+```
+
+### Supported Platforms
+
+| Platform | Code | Size | Aspect |
+|----------|------|------|--------|
+| YouTube | `youtube` | 1280×720 | 16:9 |
+| WeChat | `wechat` | 900×383 | 2.35:1 |
+| Twitter/X | `twitter` | 1200×628 | 1.91:1 |
+| Xiaohongshu | `xiaohongshu` | 1080×1440 | 3:4 |
+| Landscape | `landscape` | 1920×1080 | 16:9 |
+| Square | `square` | 1080×1080 | 1:1 |
+
+### Design Principles (from `references/cover-best-practices.md`)
+
+1. **3-Second Rule**: Instantly convey topic and value
+2. **High Contrast**: Dark background + bright subject
+3. **Single Focus**: Only one visual center
+4. **Minimal Text**: 3-6 words, bold sans-serif
+5. **Curiosity Gap**: Make viewers want to click
+
+### Visual Metaphors for Tech Content
+
+| Concept | Metaphor |
+|---------|----------|
+| AI Assistant | Two collaborative hands, chat bubbles |
+| Efficiency | Upward arrows, stairs, rocket trail |
+| Automation | Gears, assembly line nodes |
+| Learning/Growth | Seed → tree, ascending stairs |
+| Problem → Solution | Maze exit, completed puzzle |
+
+---
+
 ## Smart Position Detection
 
 The skill analyzes article structure to identify optimal illustration points:
@@ -353,6 +408,7 @@ The skill automatically selects the best rendering engine based on content:
 | Light | `styles/style-light.md` | Content illustrations (default) |
 | Dark | `styles/style-dark.md` | Cover images, marketing |
 | Minimal | `styles/style-minimal.md` | Technical docs, whitepapers |
+| Cover | `styles/style-cover.md` | YouTube thumbnails, social covers (cover mode) |
 
 ### Content Illustrations: Light Style
 
@@ -380,18 +436,21 @@ smart-illustrator/
 ├── SKILL.md                  # Skill definition (Claude Code entry)
 ├── CLAUDE.md                 # Project rules (style sync, JSON format)
 ├── README.md
+├── README.zh-CN.md           # Chinese documentation
 ├── LICENSE
 ├── scripts/
 │   ├── generate-image.ts     # Gemini single image generation
-│   ├── batch-generate.ts     # Gemini batch generation (2K resolution)
+│   ├── batch-generate.ts     # Gemini batch generation (2K, resume support)
 │   └── mermaid-export.ts     # Mermaid diagram to PNG export
 ├── styles/
 │   ├── brand-colors.md       # Brand palette (customizable)
 │   ├── style-light.md        # Light style Gemini prompt (default)
 │   ├── style-dark.md         # Dark style Gemini prompt
-│   └── style-minimal.md      # Minimal style Gemini prompt
+│   ├── style-minimal.md      # Minimal style Gemini prompt
+│   └── style-cover.md        # Cover/thumbnail style (cover mode)
 └── references/
-    └── slides-prompt-example.json  # PPT mode JSON format example
+    ├── slides-prompt-example.json  # PPT mode JSON format example
+    └── cover-best-practices.md     # YouTube thumbnail best practices
 ```
 
 ## Customization
@@ -474,6 +533,7 @@ This skill follows the style guidelines from [mermaid-visualizer](https://github
 | `styles/style-light.md` | Content illustrations (default) | 3:4 portrait |
 | `styles/style-dark.md` | Cover images | 16:9 landscape |
 | `styles/style-minimal.md` | Technical docs | 3:4 portrait |
+| `styles/style-cover.md` | YouTube/social covers | Platform-specific |
 | `styles/brand-colors.md` | Color palette reference | - |
 
 ## Cost

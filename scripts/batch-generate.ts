@@ -22,6 +22,7 @@
  */
 
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -197,7 +198,14 @@ Options:
   -m, --model <model>       Model to use (default: gemini-3-pro-image-preview)
   -d, --delay <ms>          Delay between requests in ms (default: 2000)
   -p, --prefix <text>       Filename prefix (default: from config filename)
+  -r, --regenerate <ids>    Regenerate specific images (e.g., "3" or "3,5,7")
+  -f, --force               Force regenerate all images (ignore existing)
   -h, --help                Show this help
+
+Resume Generation:
+  By default, the script skips images that already exist in the output directory.
+  This allows you to resume interrupted generation without re-generating completed images.
+  Use --force to regenerate all images, or --regenerate to regenerate specific ones.
 
 Environment:
   GEMINI_API_KEY            Required. Get from https://aistudio.google.com/apikey
@@ -233,6 +241,8 @@ async function main() {
   let model = 'gemini-3-pro-image-preview';
   let delay = 2000;
   let prefix: string | null = null;
+  let forceRegenerate = false;
+  let regenerateIds: Set<number> | null = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -260,6 +270,16 @@ async function main() {
       case '-p':
       case '--prefix':
         prefix = args[++i];
+        break;
+      case '-f':
+      case '--force':
+        forceRegenerate = true;
+        break;
+      case '-r':
+      case '--regenerate':
+        regenerateIds = new Set(
+          args[++i].split(',').map(id => parseInt(id.trim(), 10))
+        );
         break;
     }
   }
@@ -292,6 +312,7 @@ async function main() {
     const total = config.pictures.length;
     let success = 0;
     let failed = 0;
+    let skipped = 0;
 
     console.log(`\nBatch Image Generation (Unified Format)`);
     console.log(`=======================================`);
@@ -299,17 +320,47 @@ async function main() {
     console.log(`Total: ${total} images`);
     console.log(`Prefix: ${prefix}`);
     console.log(`Output: ${outputDir}`);
-    console.log(`Delay: ${delay}ms between requests\n`);
+    console.log(`Delay: ${delay}ms between requests`);
+    if (forceRegenerate) {
+      console.log(`Mode: Force regenerate all`);
+    } else if (regenerateIds) {
+      console.log(`Mode: Regenerate specific IDs: ${[...regenerateIds].join(', ')}`);
+    } else {
+      console.log(`Mode: Resume (skip existing)`);
+    }
+    console.log();
+
+    let needsDelay = false;
 
     for (const picture of config.pictures) {
-      const prompt = buildPromptFromUnified(picture, config.style);
       const filename = `${prefix}-${String(picture.id).padStart(2, '0')}.png`;
       const outputPath = join(outputDir, filename);
 
+      // Check if we should skip this image
+      const fileExists = existsSync(outputPath);
+      const shouldRegenerate = regenerateIds?.has(picture.id);
+      const shouldSkip = fileExists && !forceRegenerate && !shouldRegenerate;
+
+      if (shouldSkip) {
+        console.log(`[${picture.id}/${total}] Skipping: ${filename} (already exists)`);
+        skipped++;
+        continue;
+      }
+
+      // Add delay before generation (except for first image)
+      if (needsDelay) {
+        console.log(`  Waiting ${delay}ms...`);
+        await sleep(delay);
+      }
+
       console.log(`[${picture.id}/${total}] Generating: ${filename}`);
       console.log(`  Topic: ${picture.topic}`);
+      if (shouldRegenerate) {
+        console.log(`  (Regenerating as requested)`);
+      }
 
       try {
+        const prompt = buildPromptFromUnified(picture, config.style);
         const imageBuffer = await generateImage(prompt, model, apiKey);
 
         if (imageBuffer) {
@@ -317,23 +368,25 @@ async function main() {
           await writeFile(outputPath, imageBuffer);
           console.log(`  ✓ Saved (${(imageBuffer.length / 1024).toFixed(1)} KB)`);
           success++;
+          needsDelay = true;
         } else {
           console.log(`  ✗ No image generated`);
           failed++;
+          needsDelay = true;
         }
       } catch (error) {
         console.log(`  ✗ Error: ${error instanceof Error ? error.message : error}`);
         failed++;
-      }
-
-      if (picture.id < total) {
-        console.log(`  Waiting ${delay}ms...`);
-        await sleep(delay);
+        needsDelay = true;
       }
     }
 
     console.log(`\n=======================================`);
-    console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
+    if (skipped > 0) {
+      console.log(`Complete: ${success} generated, ${skipped} skipped, ${failed} failed`);
+    } else {
+      console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
+    }
     console.log(`Output directory: ${outputDir}`);
 
   } else {
@@ -348,20 +401,50 @@ async function main() {
     const total = legacyConfig.illustrations.length;
     let success = 0;
     let failed = 0;
+    let skipped = 0;
 
     console.log(`\nBatch Image Generation (Legacy Format)`);
     console.log(`======================================`);
     console.log(`Model: ${model}`);
     console.log(`Total: ${total} images`);
-    console.log(`Output: ${outputDir}\n`);
+    console.log(`Output: ${outputDir}`);
+    if (forceRegenerate) {
+      console.log(`Mode: Force regenerate all`);
+    } else if (regenerateIds) {
+      console.log(`Mode: Regenerate specific IDs: ${[...regenerateIds].join(', ')}`);
+    } else {
+      console.log(`Mode: Resume (skip existing)`);
+    }
+    console.log();
+
+    let needsDelay = false;
 
     for (const illustration of legacyConfig.illustrations) {
-      const prompt = buildPromptFromLegacy(illustration, legacyConfig.style);
       const outputPath = join(outputDir, illustration.filename);
 
+      // Check if we should skip this image
+      const fileExists = existsSync(outputPath);
+      const shouldRegenerate = regenerateIds?.has(illustration.id);
+      const shouldSkip = fileExists && !forceRegenerate && !shouldRegenerate;
+
+      if (shouldSkip) {
+        console.log(`[${illustration.id}/${total}] Skipping: ${illustration.filename} (already exists)`);
+        skipped++;
+        continue;
+      }
+
+      // Add delay before generation (except for first image)
+      if (needsDelay) {
+        await sleep(delay);
+      }
+
       console.log(`[${illustration.id}/${total}] Generating: ${illustration.filename}`);
+      if (shouldRegenerate) {
+        console.log(`  (Regenerating as requested)`);
+      }
 
       try {
+        const prompt = buildPromptFromLegacy(illustration, legacyConfig.style);
         const imageBuffer = await generateImage(prompt, model, apiKey);
 
         if (imageBuffer) {
@@ -369,22 +452,25 @@ async function main() {
           await writeFile(outputPath, imageBuffer);
           console.log(`  ✓ Saved (${(imageBuffer.length / 1024).toFixed(1)} KB)`);
           success++;
+          needsDelay = true;
         } else {
           console.log(`  ✗ No image generated`);
           failed++;
+          needsDelay = true;
         }
       } catch (error) {
         console.log(`  ✗ Error: ${error instanceof Error ? error.message : error}`);
         failed++;
-      }
-
-      if (illustration.id < total) {
-        await sleep(delay);
+        needsDelay = true;
       }
     }
 
     console.log(`\n======================================`);
-    console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
+    if (skipped > 0) {
+      console.log(`Complete: ${success} generated, ${skipped} skipped, ${failed} failed`);
+    } else {
+      console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
+    }
     console.log(`Output directory: ${outputDir}`);
   }
 }

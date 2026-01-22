@@ -1,14 +1,15 @@
 ---
 name: smart-illustrator
-description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片；(3) Match 模式 - 从已有图片中挑选合适的配图插入文章。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT、匹配图片、挑选配图、复用图片。
+description: 智能配图与 PPT 信息图生成器。支持四种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片；(3) Match 模式 - 从已有图片中挑选合适的配图插入文章；(4) Cover 模式 - 生成高点击率的 YouTube/公众号封面图。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT、匹配图片、挑选配图、复用图片、封面图、缩略图、thumbnail、cover。
 ---
 
 # Smart Illustrator - 智能配图与 PPT 生成器
 
-支持三种模式：
+支持四种模式：
 1. **文章配图模式**（默认）：为文章生成插图
 2. **PPT/Slides 模式**：将内容转化为批量信息图 JSON prompt
 3. **Match 模式**：从已有图片中挑选合适的配图插入文章
+4. **Cover 模式**（新）：生成高点击率的 YouTube/公众号封面图
 
 ## 使用方式
 
@@ -128,12 +129,57 @@ description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) �
 - 如果没有合适的图片匹配某个位置，跳过该位置
 - 输出时说明每张图被匹配到的位置和理由
 
+### Cover 模式（封面图生成）
+
+专为 YouTube 缩略图、公众号封面等设计的高点击率封面图生成器。
+
+```bash
+# 为文章生成 YouTube 封面
+/smart-illustrator path/to/article.md --mode cover --platform youtube
+
+# 指定主题直接生成
+/smart-illustrator --mode cover --platform youtube --topic "Claude 4 深度评测"
+
+# 指定描述生成
+/smart-illustrator --mode cover --platform wechat --description "震惊表情 + AI 工具对比"
+
+# 或直接说"生成封面"、"做个缩略图"
+请为 xxx.md 生成一张 YouTube 封面图
+```
+
+**支持的平台尺寸**：
+
+| 平台 | 代码 | 尺寸 | 比例 |
+|------|------|------|------|
+| YouTube | `youtube` | 1280×720 | 16:9 |
+| 公众号 | `wechat` | 900×383 | 2.35:1 |
+| Twitter | `twitter` | 1200×628 | 1.91:1 |
+| 小红书 | `xiaohongshu` | 1080×1440 | 3:4 |
+| 通用横版 | `landscape` | 1920×1080 | 16:9 |
+| 通用方形 | `square` | 1080×1080 | 1:1 |
+
+**Cover 模式设计原则**（详见 `references/cover-best-practices.md`）：
+1. **3 秒法则**：瞬间传达主题和价值
+2. **高对比**：深色背景 + 亮色主体
+3. **单一焦点**：只有一个视觉中心
+4. **文字精简**：3-6 字，粗体无衬线
+5. **好奇心缺口**：让人想点击
+
+**Cover 模式工作流程**：
+1. 如果提供文章路径：分析标题和内容，提取核心概念
+2. 根据平台选择对应尺寸
+3. 加载 `styles/style-cover.md` 样式
+4. 生成封面图并保存为 `{文章名}-cover-{platform}.png`
+
 ### 参数说明
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--mode` | `article` | 模式：`article`（文章配图）、`slides`（PPT 信息图）或 `match`（图片复用） |
+| `--mode` | `article` | 模式：`article`（文章配图）、`slides`（PPT 信息图）、`match`（图片复用）或 `cover`（封面图） |
 | `--images` | - | 图片目录或文件路径（仅 match 模式必需） |
+| `--platform` | `youtube` | 封面图平台：`youtube`/`wechat`/`twitter`/`xiaohongshu`/`landscape`/`square`（仅 cover 模式） |
+| `--topic` | - | 封面图主题（仅 cover 模式，可替代文章路径） |
+| `--description` | - | 封面图描述/视觉方向（仅 cover 模式） |
 | `--prompt-only` | `false` | 只输出 prompt，不自动调用 API 生成图片 |
 | `--style` | `light` | 风格名称，加载 `styles/style-{name}.md` |
 | `--list-styles` | - | 列出 `styles/` 目录下所有可用风格 |
@@ -254,6 +300,7 @@ description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) �
 | 浅色清爽 | `--style light`（默认） | 文章配图、概念解释、日常内容 |
 | 深色科技 | `--style dark` | 课程宣传、产品介绍、高冲击力场景 |
 | 极简风格 | `--style minimal` | 技术文档、白皮书、专业报告 |
+| 封面图 | `--style cover` | YouTube 缩略图、公众号封面（cover 模式自动使用） |
 
 **自定义风格**：在 `styles/` 目录添加 `style-{name}.md` 文件即可扩展。
 
@@ -291,7 +338,11 @@ styles/
 ├── brand-colors.md    # 品牌色板（可自定义）
 ├── style-light.md     # 浅色清爽风格 Gemini Prompt（默认）
 ├── style-dark.md      # 深色科技风格 Gemini Prompt
-└── style-minimal.md   # 极简风格 Gemini Prompt
+├── style-minimal.md   # 极简风格 Gemini Prompt
+└── style-cover.md     # 封面图风格 Gemini Prompt（cover 模式）
+
+references/
+└── cover-best-practices.md  # YouTube 封面图最佳实践
 ```
 
 ### 内置风格
@@ -301,6 +352,7 @@ styles/
 | 浅色清爽 | `style-light.md` | 正文配图（默认） |
 | 深色科技 | `style-dark.md` | 封面图、课程宣传 |
 | 极简风格 | `style-minimal.md` | 技术文档、白皮书 |
+| 封面图 | `style-cover.md` | YouTube 缩略图、公众号封面（cover 模式） |
 
 ### 自定义风格
 

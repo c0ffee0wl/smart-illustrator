@@ -4,26 +4,52 @@
  * Batch Image Generation Script
  *
  * Generates multiple images from a JSON config file.
+ * Supports the unified JSON format (same as web version).
  *
  * Usage:
- *   npx -y bun batch-generate.ts --config illustrations.json --output-dir ./images
+ *   npx -y bun batch-generate.ts --config slides.json --output-dir ./images
  *
- * Config format (illustrations.json):
+ * Config format (unified with web version):
  *   {
- *     "style": { ... },
- *     "illustrations": [
- *       { "id": 1, "prompt": "...", "filename": "01-xxx.png" },
- *       { "id": 2, "prompt": "...", "filename": "02-xxx.png" }
+ *     "instruction": "请为我绘制 N 张图片...",
+ *     "batch_rules": { "total": N, "one_item_one_image": true, "aspect_ratio": "16:9" },
+ *     "style": "完整的 style prompt 字符串...",
+ *     "pictures": [
+ *       { "id": 1, "topic": "封面", "content": "..." },
+ *       { "id": 2, "topic": "...", "content": "..." }
  *     ]
  *   }
  */
 
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-interface IllustrationConfig {
+// New unified format (same as web version)
+interface PictureConfig {
+  id: number;
+  topic: string;
+  content: string;
+}
+
+interface BatchRules {
+  total: number;
+  one_item_one_image?: boolean;
+  aspect_ratio?: string;
+  do_not_merge?: boolean;
+}
+
+interface UnifiedConfig {
+  instruction?: string;
+  batch_rules?: BatchRules;
+  fallback?: string;
+  style: string;
+  pictures: PictureConfig[];
+}
+
+// Legacy format (for backward compatibility)
+interface LegacyIllustration {
   id: number;
   prompt: string | object;
   filename: string;
@@ -31,7 +57,7 @@ interface IllustrationConfig {
   position?: string;
 }
 
-interface BatchConfig {
+interface LegacyConfig {
   style?: {
     mode?: string;
     background?: string;
@@ -39,8 +65,10 @@ interface BatchConfig {
     accent?: string[];
   };
   instructions?: string;
-  illustrations: IllustrationConfig[];
+  illustrations: LegacyIllustration[];
 }
+
+type BatchConfig = UnifiedConfig | LegacyConfig;
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -60,7 +88,28 @@ interface GeminiResponse {
   };
 }
 
-function buildPrompt(illustration: IllustrationConfig, style?: BatchConfig['style']): string {
+function isUnifiedConfig(config: BatchConfig): config is UnifiedConfig {
+  return 'pictures' in config && Array.isArray(config.pictures);
+}
+
+function buildPromptFromUnified(picture: PictureConfig, style: string): string {
+  // Combine style + topic + content into a single prompt
+  return `${style}
+
+---
+
+请为以下内容生成一张信息图：
+
+**主题方向**: ${picture.topic}
+
+**内容**:
+${picture.content}`;
+}
+
+function buildPromptFromLegacy(
+  illustration: LegacyIllustration,
+  style?: LegacyConfig['style']
+): string {
   let prompt = '';
 
   if (style) {
@@ -138,34 +187,38 @@ function printUsage(): never {
 Batch Image Generation Script
 
 Usage:
-  npx -y bun batch-generate.ts --config illustrations.json --output-dir ./images
+  npx -y bun batch-generate.ts --config slides.json --output-dir ./images
 
 Options:
-  -c, --config <path>       JSON config file with illustration specs
+  -c, --config <path>       JSON config file (unified format, same as web version)
   -o, --output-dir <path>   Output directory (default: ./illustrations)
   -m, --model <model>       Model to use (default: gemini-3-pro-image-preview)
-  -d, --delay <ms>          Delay between requests in ms (default: 1000)
+  -d, --delay <ms>          Delay between requests in ms (default: 2000)
+  -p, --prefix <text>       Filename prefix (default: from config filename)
   -h, --help                Show this help
 
 Environment:
   GEMINI_API_KEY            Required. Get from https://aistudio.google.com/apikey
 
-Config File Format:
+Config File Format (Unified - same JSON as web version):
   {
-    "style": {
-      "mode": "light",
-      "background": "#F8F9FA",
-      "primary": "#2F2B42",
-      "accent": ["#F59E0B", "#38BDF8"]
+    "instruction": "请为我绘制 7 张图片（generate 7 images）...",
+    "batch_rules": {
+      "total": 7,
+      "one_item_one_image": true,
+      "aspect_ratio": "16:9",
+      "do_not_merge": true
     },
-    "illustrations": [
-      {
-        "id": 1,
-        "prompt": "A concept diagram showing...",
-        "filename": "01-concept.png"
-      }
+    "fallback": "如果无法一次生成全部图片...",
+    "style": "完整的 style prompt（从 styles/style-light.md 复制）...",
+    "pictures": [
+      { "id": 1, "topic": "封面", "content": "Agent Skills 完全指南\\n\\n第1节：..." },
+      { "id": 2, "topic": "核心概念", "content": "Skills 是什么..." }
     ]
   }
+
+Output Filenames:
+  {prefix}-{id:02d}.png  (e.g., SKILL_01-01.png, SKILL_01-02.png)
 `);
   process.exit(0);
 }
@@ -176,7 +229,8 @@ async function main() {
   let configPath: string | null = null;
   let outputDir = './illustrations';
   let model = 'gemini-3-pro-image-preview';
-  let delay = 1000;
+  let delay = 2000;
+  let prefix: string | null = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -201,6 +255,10 @@ async function main() {
       case '--delay':
         delay = parseInt(args[++i], 10);
         break;
+      case '-p':
+      case '--prefix':
+        prefix = args[++i];
+        break;
     }
   }
 
@@ -219,54 +277,114 @@ async function main() {
   const configContent = await readFile(configPath, 'utf-8');
   const config: BatchConfig = JSON.parse(configContent);
 
-  if (!config.illustrations || config.illustrations.length === 0) {
-    console.error('Error: No illustrations in config');
-    process.exit(1);
+  // Auto-detect prefix from config filename if not specified
+  if (!prefix) {
+    prefix = basename(configPath, '.json').replace(/-slides$/, '');
   }
 
   await mkdir(outputDir, { recursive: true });
 
-  const total = config.illustrations.length;
-  let success = 0;
-  let failed = 0;
+  // Handle unified format vs legacy format
+  if (isUnifiedConfig(config)) {
+    // Unified format (new)
+    const total = config.pictures.length;
+    let success = 0;
+    let failed = 0;
 
-  console.log(`\nBatch Image Generation`);
-  console.log(`======================`);
-  console.log(`Model: ${model}`);
-  console.log(`Total: ${total} images`);
-  console.log(`Output: ${outputDir}\n`);
+    console.log(`\nBatch Image Generation (Unified Format)`);
+    console.log(`=======================================`);
+    console.log(`Model: ${model}`);
+    console.log(`Total: ${total} images`);
+    console.log(`Prefix: ${prefix}`);
+    console.log(`Output: ${outputDir}`);
+    console.log(`Delay: ${delay}ms between requests\n`);
 
-  for (const illustration of config.illustrations) {
-    const prompt = buildPrompt(illustration, config.style);
-    const outputPath = join(outputDir, illustration.filename);
+    for (const picture of config.pictures) {
+      const prompt = buildPromptFromUnified(picture, config.style);
+      const filename = `${prefix}-${String(picture.id).padStart(2, '0')}.png`;
+      const outputPath = join(outputDir, filename);
 
-    console.log(`[${illustration.id}/${total}] Generating: ${illustration.filename}`);
+      console.log(`[${picture.id}/${total}] Generating: ${filename}`);
+      console.log(`  Topic: ${picture.topic}`);
 
-    try {
-      const imageBuffer = await generateImage(prompt, model, apiKey);
+      try {
+        const imageBuffer = await generateImage(prompt, model, apiKey);
 
-      if (imageBuffer) {
-        await mkdir(dirname(outputPath), { recursive: true });
-        await writeFile(outputPath, imageBuffer);
-        console.log(`  ✓ Saved (${(imageBuffer.length / 1024).toFixed(1)} KB)`);
-        success++;
-      } else {
-        console.log(`  ✗ No image generated`);
+        if (imageBuffer) {
+          await mkdir(dirname(outputPath), { recursive: true });
+          await writeFile(outputPath, imageBuffer);
+          console.log(`  ✓ Saved (${(imageBuffer.length / 1024).toFixed(1)} KB)`);
+          success++;
+        } else {
+          console.log(`  ✗ No image generated`);
+          failed++;
+        }
+      } catch (error) {
+        console.log(`  ✗ Error: ${error instanceof Error ? error.message : error}`);
         failed++;
       }
-    } catch (error) {
-      console.log(`  ✗ Error: ${error instanceof Error ? error.message : error}`);
-      failed++;
+
+      if (picture.id < total) {
+        console.log(`  Waiting ${delay}ms...`);
+        await sleep(delay);
+      }
     }
 
-    if (illustration.id < total) {
-      await sleep(delay);
+    console.log(`\n=======================================`);
+    console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
+    console.log(`Output directory: ${outputDir}`);
+
+  } else {
+    // Legacy format (backward compatibility)
+    const legacyConfig = config as LegacyConfig;
+
+    if (!legacyConfig.illustrations || legacyConfig.illustrations.length === 0) {
+      console.error('Error: No illustrations in config');
+      process.exit(1);
     }
+
+    const total = legacyConfig.illustrations.length;
+    let success = 0;
+    let failed = 0;
+
+    console.log(`\nBatch Image Generation (Legacy Format)`);
+    console.log(`======================================`);
+    console.log(`Model: ${model}`);
+    console.log(`Total: ${total} images`);
+    console.log(`Output: ${outputDir}\n`);
+
+    for (const illustration of legacyConfig.illustrations) {
+      const prompt = buildPromptFromLegacy(illustration, legacyConfig.style);
+      const outputPath = join(outputDir, illustration.filename);
+
+      console.log(`[${illustration.id}/${total}] Generating: ${illustration.filename}`);
+
+      try {
+        const imageBuffer = await generateImage(prompt, model, apiKey);
+
+        if (imageBuffer) {
+          await mkdir(dirname(outputPath), { recursive: true });
+          await writeFile(outputPath, imageBuffer);
+          console.log(`  ✓ Saved (${(imageBuffer.length / 1024).toFixed(1)} KB)`);
+          success++;
+        } else {
+          console.log(`  ✗ No image generated`);
+          failed++;
+        }
+      } catch (error) {
+        console.log(`  ✗ Error: ${error instanceof Error ? error.message : error}`);
+        failed++;
+      }
+
+      if (illustration.id < total) {
+        await sleep(delay);
+      }
+    }
+
+    console.log(`\n======================================`);
+    console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
+    console.log(`Output directory: ${outputDir}`);
   }
-
-  console.log(`\n======================`);
-  console.log(`Complete: ${success}/${total} succeeded, ${failed} failed`);
-  console.log(`Output directory: ${outputDir}`);
 }
 
 main();

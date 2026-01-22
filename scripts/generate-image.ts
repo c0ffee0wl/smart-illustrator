@@ -55,7 +55,10 @@ async function generateImage(
       }
     ],
     generationConfig: {
-      responseModalities: ['IMAGE', 'TEXT']
+      responseModalities: ['IMAGE', 'TEXT'],
+      imageConfig: {
+        imageSize: '2K'
+      }
     }
   };
 

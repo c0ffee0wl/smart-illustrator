@@ -1,13 +1,14 @@
 ---
 name: smart-illustrator
-description: 智能配图与 PPT 信息图生成器。支持两种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT。
+description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片；(3) Match 模式 - 从已有图片中挑选合适的配图插入文章。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT、匹配图片、挑选配图、复用图片。
 ---
 
 # Smart Illustrator - 智能配图与 PPT 生成器
 
-支持两种模式：
+支持三种模式：
 1. **文章配图模式**（默认）：为文章生成插图
 2. **PPT/Slides 模式**：将内容转化为批量信息图 JSON prompt
+3. **Match 模式**：从已有图片中挑选合适的配图插入文章
 
 ## 使用方式
 
@@ -100,11 +101,39 @@ description: 智能配图与 PPT 信息图生成器。支持两种模式：(1) �
 2. 严格按照示例的结构生成，不要自创格式
 3. 从 `styles/style-light.md` 读取完整 style 内容放入 JSON
 
+### Match 模式（图片复用）
+
+从已有图片中挑选合适的配图插入文章，无需重新生成。适用于：
+- PPT 模式生成的图片复用到文章
+- 已有图片素材库的匹配
+
+```bash
+# 从图片目录中匹配
+/smart-illustrator path/to/article.md --mode match --images path/to/images/
+
+# 或直接说"匹配图片"、"挑选配图"
+请从 images/ 目录中挑选合适的图片为 article.md 配图
+```
+
+**Match 模式工作流程**：
+1. 读取文章内容，分析结构，识别配图位置
+2. 读取 `--images` 指定的目录/文件中的所有图片
+3. **Claude 使用视觉能力理解每张图片的内容主题**
+4. 根据内容相关性匹配：文章段落 ↔ 图片
+5. 输出带配图引用的 `{文章名}-image.md`
+
+**Match 模式规则**：
+- 不是每张图都要用，只挑选最匹配的
+- 不是每个段落都要配图，只在需要的位置插入
+- 如果没有合适的图片匹配某个位置，跳过该位置
+- 输出时说明每张图被匹配到的位置和理由
+
 ### 参数说明
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--mode` | `article` | 模式：`article`（文章配图）或 `slides`（PPT 信息图） |
+| `--mode` | `article` | 模式：`article`（文章配图）、`slides`（PPT 信息图）或 `match`（图片复用） |
+| `--images` | - | 图片目录或文件路径（仅 match 模式必需） |
 | `--prompt-only` | `false` | 只输出 prompt，不自动调用 API 生成图片 |
 | `--style` | `light` | 风格名称，加载 `styles/style-{name}.md` |
 | `--list-styles` | - | 列出 `styles/` 目录下所有可用风格 |

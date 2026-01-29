@@ -67,23 +67,25 @@ async function generateImageOpenRouter(
   apiKey: string,
   size: 'default' | '2k' = 'default'
 ): Promise<{ imageData: Buffer; mimeType: string } | null> {
-  // For 2K, add size hint to prompt (OpenRouter doesn't support imageConfig)
-  const sizeHint = size === '2k' ? ' Output in 2K resolution (2048x2048 or similar high resolution).' : '';
-  const fullPrompt = prompt + sizeHint;
   const url = `${OPENROUTER_API_BASE}/chat/completions`;
 
-  // OpenRouter with Gemini image model - use modalities parameter per official docs
-  const requestBody = {
+  // Build request body with image_config for resolution control
+  const requestBody: Record<string, unknown> = {
     model: model,
     messages: [
       {
         role: 'user',
-        content: fullPrompt
+        content: prompt
       }
     ],
     // Key: request image output modality
     modalities: ['image', 'text']
   };
+
+  // Add image_config for 2K resolution (OpenRouter supports this for Gemini models)
+  if (size === '2k') {
+    requestBody.image_config = { image_size: '2K' };
+  }
 
   const response = await fetch(url, {
     method: 'POST',

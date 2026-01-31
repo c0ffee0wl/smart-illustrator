@@ -86,8 +86,7 @@ cp -r smart-illustrator/styles ~/.claude/skills/smart-illustrator/
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--mode` | `article` | 模式：`article`、`slides`、`match` 或 `cover` |
-| `--images` | - | 图片目录路径（match 模式必需） |
+| `--mode` | `article` | 模式：`article`、`slides` 或 `cover` |
 | `--platform` | `youtube` | 封面平台：`youtube`/`wechat`/`twitter`/`xiaohongshu`/`landscape`/`square` |
 | `--topic` | - | 封面主题（可替代文章路径，仅 cover 模式） |
 | `--description` | - | 封面视觉方向（仅 cover 模式） |
@@ -96,6 +95,9 @@ cp -r smart-illustrator/styles ~/.claude/skills/smart-illustrator/
 | `--list-styles` | - | 列出 `styles/` 目录下所有可用风格 |
 | `--no-cover` | `false` | 不生成封面图（article 模式） |
 | `--count` | 自动 | 配图数量（根据文章长度自动判断） |
+| `--ref` | - | 参考图路径（可多次使用，最多 3 张）|
+| `--ref-weight` | `1.0` | 参考图权重（0.0-1.0，暂未实现） |
+| `-c, --candidates` | `1` | 生成候选图数量（最多 4 张），用于 Quality Router |
 
 ### 配图数量建议
 
@@ -141,6 +143,11 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/generate-image.ts \
 | `-f, --prompt-file` | 从文件读取 prompt |
 | `-o, --output` | 输出路径（默认：generated.png） |
 | `-m, --model` | 模型（默认：gemini-3-pro-image-preview） |
+| `-r, --ref` | 参考图路径（可多次使用，最多 3 张） |
+| `--ref-weight` | 参考图权重（0.0-1.0，暂未实现） |
+| `-c, --candidates` | 生成候选图数量（最多 4 张） |
+| `--size` | 图片尺寸：`default` 或 `2k` |
+| `--provider` | API 提供商：`openrouter` 或 `gemini` |
 
 #### batch-generate.ts（批量生成）
 
@@ -202,7 +209,6 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/mermaid-export.ts \
 |------|------|------|
 | **Article 模式** | 博客、Newsletter | 3-5 张配图插入文章 |
 | **Slides 模式** | 视频 B-roll、演示文稿 | 8-15 张独立信息图 |
-| **Match 模式** | 复用已有图片 | 从文件夹中选择最匹配的图片 |
 
 ### 批量生成的 JSON 格式
 
@@ -258,23 +264,36 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/mermaid-export.ts \
 - **章节标题**：如 "渐进式披露与 Description 优化"
 - **学习目标**（可选）
 
-### 工作流选项
+### 输出方式选项（适用于所有模式）
 
-**方式 A：Gemini Web（手动）**
+`--prompt-only` 是**全局选项**，适用于 Article、Slides、Cover 等所有模式：
+
+| 输出方式 | 参数 | 说明 | 需要 API |
+|----------|------|------|----------|
+| 直接生成图片 | 默认 | 调用 Gemini API 生成图片 | ✅ 需要 |
+| 输出 JSON Prompt | `--prompt-only` | 复制到 Gemini Web 手动生成 | ❌ 不需要 |
+
+**示例组合：**
+
 ```bash
-# 1. 生成 JSON prompt
-/smart-illustrator path/to/script.md --mode slides
+# Slides 模式 + 直接生成图片（需要 API）
+/smart-illustrator script.md --mode slides
 
-# 2. 复制 JSON 到 Gemini（gemini.google.com）
-# 3. Gemini 生成图片
+# Slides 模式 + 只输出 JSON（无需 API）
+/smart-illustrator script.md --mode slides --prompt-only
+
+# Article 模式 + 直接生成图片（需要 API）
+/smart-illustrator article.md
+
+# Article 模式 + 只输出 JSON（无需 API）
+/smart-illustrator article.md --prompt-only
 ```
 
-**方式 B：Gemini API（自动）**
+**手动批量生成（用于 JSON prompt 输出后）：**
+
 ```bash
-# 设置 API Key
 export GEMINI_API_KEY=your_key
 
-# 运行批量生成（2K 分辨率，2816x1536）
 npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
   --config slides.json \
   --output-dir ./images
@@ -282,24 +301,117 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
 
 完整示例见 `references/slides-prompt-example.json`。
 
-## Match 模式（图片复用）
+## 参考图模式（Style-lock）
 
-复用已有的 PPT 图片为文章配图，无需重新生成。
+使用参考图引导生成图片的视觉风格，确保系列图片风格一致。
 
 ```bash
-/smart-illustrator path/to/article.md --mode match --images path/to/images/
+# 使用单张参考图
+/smart-illustrator article.md --ref style-ref.png
+
+# 使用多张参考图（最多 3 张）
+/smart-illustrator article.md --ref ref1.png --ref ref2.png
+
+# 结合 Quality Router 使用
+/smart-illustrator article.md --ref style-ref.png -c 2
 ```
 
-**工作原理：**
-1. 读取文章内容，识别配图位置
-2. 使用 Claude 的视觉能力理解每张图片的内容
-3. 根据相关性匹配图片到文章段落
-4. 输出带图片引用的 `{文章名}-image.md`
+**限制**：
+- 参考图功能仅支持 Gemini API（OpenRouter 不支持多模态输入）
+- 使用参考图时会自动从 OpenRouter 切换到 Gemini
+- 最多 3 张参考图
+- 参考图建议尺寸：512-1024px，过大会增加 API 延迟和费用
 
-**规则：**
-- 不是每张图都要用
-- 不是每个段落都要配图
-- 没有合适匹配时跳过该位置
+---
+
+## Quality Router（多候选图生成）
+
+生成多张候选图供用户选择，提高最终图片质量。
+
+```bash
+# 生成 2 张候选图
+/smart-illustrator article.md --candidates 2
+
+# 简写形式
+/smart-illustrator article.md -c 2
+
+# 结合参考图使用
+/smart-illustrator article.md --ref style-ref.png -c 2
+```
+
+**输出**：
+- 单候选（默认）：`output.png`
+- 多候选：`output-1.png`、`output-2.png`
+
+**工作流程**：
+1. 按指定数量生成图片
+2. 输出所有候选图路径
+3. 用户选择最佳结果
+
+**建议**：
+- 日常使用 1 张（节省成本）
+- 重要场景（封面图、课程宣传）使用 2 张
+- 最多支持 4 张
+
+---
+
+## 配置文件（风格复用）
+
+通过配置文件保存常用参数，实现系列内容（课程、Newsletter）的风格一致性。
+
+### 配置文件位置
+
+**优先级：CLI 参数 > 项目级配置 > 用户级配置**
+
+| 位置 | 路径 | 用途 |
+|------|------|------|
+| 项目级 | `{工作目录}/.smart-illustrator/config.json` | 特定项目的风格配置（如某个课程系列） |
+| 用户级 | `~/.smart-illustrator/config.json` | 用户全局默认风格 |
+
+### 配置文件格式
+
+```json
+{
+  "references": [
+    "./refs/style-ref-01.png",
+    "./refs/style-ref-02.png"
+  ]
+}
+```
+
+**支持的配置项**：
+- `references`：参考图路径数组（相对路径相对于配置文件所在目录）
+
+### 使用示例
+
+```bash
+# 首次配置：为课程系列设置风格
+cd ~/my-course
+/smart-illustrator article-01.md --ref ./refs/style-1.png --save-config
+
+# 之后生成：自动使用配置
+/smart-illustrator article-02.md  # 自动应用参考图
+
+# 临时覆盖：使用不同参考图
+/smart-illustrator article-03.md --ref ./other-ref.png
+
+# 完全忽略配置
+/smart-illustrator article-04.md --no-config
+
+# 保存到用户级配置（全局默认）
+/smart-illustrator article.md --ref ./my-style.png --save-config-global
+```
+
+### 配置加载规则
+
+1. 读取用户级配置（如果存在）
+2. 读取项目级配置（如果存在，覆盖用户级）
+3. 应用命令行参数（覆盖配置文件）
+
+**典型场景**：
+- **课程系列**：项目目录下保存 `.smart-illustrator/config.json`，所有章节自动使用统一风格
+- **个人默认**：用户目录下保存 `~/.smart-illustrator/config.json`，作为全局默认风格
+- **临时调整**：使用 `--ref` 参数临时覆盖配置，不影响保存的配置
 
 ---
 

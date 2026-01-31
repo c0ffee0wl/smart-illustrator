@@ -84,8 +84,7 @@ cp -r smart-illustrator/styles ~/.claude/skills/smart-illustrator/
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `--mode` | `article` | Mode: `article`, `slides`, `match`, or `cover` |
-| `--images` | - | Image directory path (required for match mode) |
+| `--mode` | `article` | Mode: `article`, `slides`, or `cover` |
 | `--platform` | `youtube` | Cover platform: `youtube`/`wechat`/`twitter`/`xiaohongshu`/`landscape`/`square` |
 | `--topic` | - | Cover topic (alternative to article path, cover mode only) |
 | `--description` | - | Cover visual direction (cover mode only) |
@@ -200,7 +199,6 @@ Beyond article illustrations, this skill can generate batch infographics for PPT
 |------|----------|--------|
 | **Article Mode** | Blog posts, newsletters | 3-5 illustrations inserted in article |
 | **Slides Mode** | Video B-roll, presentations | 8-15 standalone infographics |
-| **Match Mode** | Reuse existing images | Select best-fit images from a folder |
 
 ### JSON Format for Batch Generation
 
@@ -256,23 +254,36 @@ Structure:
 - **Section title**: e.g., "渐进式披露与 Description 优化"
 - **Learning objectives** (optional)
 
-### Workflow Options
+### Output Options (Applies to All Modes)
 
-**Option A: Gemini Web (Manual)**
+`--prompt-only` is a **global option** that works with Article, Slides, Cover, and all other modes:
+
+| Output Mode | Parameter | Description | API Required |
+|-------------|-----------|-------------|--------------|
+| Generate Images | Default | Calls Gemini API to generate images | ✅ Yes |
+| Output JSON Prompt | `--prompt-only` | Copy to Gemini Web for manual generation | ❌ No |
+
+**Example Combinations:**
+
 ```bash
-# 1. Generate JSON prompt
-/smart-illustrator path/to/script.md --mode slides
+# Slides mode + generate images (needs API)
+/smart-illustrator script.md --mode slides
 
-# 2. Copy JSON to Gemini (gemini.google.com)
-# 3. Gemini generates images
+# Slides mode + output JSON only (no API)
+/smart-illustrator script.md --mode slides --prompt-only
+
+# Article mode + generate images (needs API)
+/smart-illustrator article.md
+
+# Article mode + output JSON only (no API)
+/smart-illustrator article.md --prompt-only
 ```
 
-**Option B: Gemini API (Automated)**
+**Manual Batch Generation (after JSON prompt output):**
+
 ```bash
-# Set API Key
 export GEMINI_API_KEY=your_key
 
-# Run batch generation (2K resolution, 2816x1536)
 npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
   --config slides.json \
   --output-dir ./images
@@ -280,24 +291,65 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
 
 See `references/slides-prompt-example.json` for a complete example.
 
-## Match Mode (Image Reuse)
+---
 
-Reuse existing PPT images for article illustrations without regenerating.
+## Configuration Files (Style Reuse)
 
-```bash
-/smart-illustrator path/to/article.md --mode match --images path/to/images/
+Save common parameters to configuration files for consistent style across series content (courses, newsletters).
+
+### Configuration File Locations
+
+**Priority: CLI Arguments > Project Config > User Config**
+
+| Location | Path | Purpose |
+|----------|------|---------|
+| Project | `{working-dir}/.smart-illustrator/config.json` | Project-specific style (e.g., course series) |
+| User | `~/.smart-illustrator/config.json` | User's global default style |
+
+### Configuration File Format
+
+```json
+{
+  "references": [
+    "./refs/style-ref-01.png",
+    "./refs/style-ref-02.png"
+  ]
+}
 ```
 
-**How it works:**
-1. Reads article content and identifies illustration points
-2. Uses Claude's vision to understand each image's content
-3. Matches images to article sections by relevance
-4. Outputs `{article}-image.md` with image references
+**Supported options**:
+- `references`: Array of reference image paths (relative paths are resolved relative to config file directory)
 
-**Rules:**
-- Not every image needs to be used
-- Not every section needs an image
-- Skip positions with no good match
+### Usage Examples
+
+```bash
+# Initial setup: configure style for course series
+cd ~/my-course
+/smart-illustrator article-01.md --ref ./refs/style-1.png --save-config
+
+# Subsequent generation: auto-apply config
+/smart-illustrator article-02.md  # Automatically uses reference images
+
+# Temporary override: use different reference
+/smart-illustrator article-03.md --ref ./other-ref.png
+
+# Completely ignore config
+/smart-illustrator article-04.md --no-config
+
+# Save to user-level config (global default)
+/smart-illustrator article.md --ref ./my-style.png --save-config-global
+```
+
+### Configuration Loading Rules
+
+1. Read user-level config (if exists)
+2. Read project-level config (if exists, overrides user-level)
+3. Apply command-line arguments (overrides config files)
+
+**Typical scenarios**:
+- **Course series**: Save `.smart-illustrator/config.json` in project directory for unified style across chapters
+- **Personal default**: Save `~/.smart-illustrator/config.json` in user directory as global default
+- **Temporary adjustment**: Use `--ref` parameter to temporarily override config without modifying saved settings
 
 ---
 

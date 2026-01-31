@@ -21,6 +21,7 @@
 
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, resolve } from 'node:path';
+import { loadConfig, saveConfig, mergeConfig, type Config } from './config.js';
 
 // Reference image interface
 interface ReferenceImage {
@@ -314,6 +315,11 @@ Quality Router Options (multi-candidate generation):
   -c, --candidates <n>      Generate multiple candidates (default: 1, max: 4)
                             Output files: output-1.png, output-2.png, etc.
 
+Style Configuration (persistent settings):
+  --save-config             Save current settings to project config (.smart-illustrator/config.json)
+  --save-config-global      Save current settings to user config (~/.smart-illustrator/config.json)
+  --no-config               Ignore config files, use only command-line arguments
+
 Environment Variables (in order of priority):
   OPENROUTER_API_KEY        OpenRouter API key (preferred, has spending limits)
   GEMINI_API_KEY            Direct Gemini API key (fallback)
@@ -355,6 +361,9 @@ async function main() {
   const refPaths: string[] = [];
   let refWeight = 1.0;
   let candidates = 1;
+  let shouldSaveConfig = false;
+  let saveConfigGlobal = false;
+  let noConfig = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -396,7 +405,39 @@ async function main() {
       case '--candidates':
         candidates = Math.min(4, Math.max(1, parseInt(args[++i], 10) || 1));
         break;
+      case '--save-config':
+        shouldSaveConfig = true;
+        break;
+      case '--save-config-global':
+        shouldSaveConfig = true;
+        saveConfigGlobal = true;
+        break;
+      case '--no-config':
+        noConfig = true;
+        break;
     }
+  }
+
+  // Load config unless --no-config is specified
+  let loadedConfig: Config = {};
+  if (!noConfig) {
+    try {
+      loadedConfig = loadConfig(process.cwd());
+    } catch (error) {
+      // Config loading errors are not fatal
+      console.warn('Warning: Failed to load config:', error);
+    }
+  }
+
+  // Merge config with CLI arguments (CLI args take precedence)
+  const finalConfig = mergeConfig(loadedConfig, {
+    references: refPaths.length > 0 ? refPaths : undefined
+  });
+
+  // Apply merged config to variables
+  if (finalConfig.references && finalConfig.references.length > 0 && refPaths.length === 0) {
+    refPaths.push(...finalConfig.references);
+    console.log(`Using ${finalConfig.references.length} reference image(s) from config`);
   }
 
   // Determine provider and API key
@@ -506,6 +547,20 @@ async function main() {
       console.log(`\n=== Quality Router: ${generatedFiles.length} candidates generated ===`);
       generatedFiles.forEach((f, idx) => console.log(`  ${idx + 1}. ${f}`));
       console.log('\nReview the candidates and select the best one.');
+    }
+
+    // Save config if requested
+    if (shouldSaveConfig && generatedFiles.length > 0) {
+      const configToSave: Config = {
+        references: refPaths.length > 0 ? refPaths : undefined
+      };
+
+      saveConfig(configToSave, {
+        global: saveConfigGlobal,
+        cwd: process.cwd()
+      });
+
+      console.log(`\n✓ Config saved to ${saveConfigGlobal ? 'user' : 'project'} config`);
     }
   } catch (error) {
     console.error('Error:', error instanceof Error ? error.message : error);

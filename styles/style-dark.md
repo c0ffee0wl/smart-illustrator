@@ -101,7 +101,7 @@
 ## 水印（可选，见 brand-colors.md）
 
 - 图片左下角包含水印（如需要）
-- 格式：**© Your Name | your-domain.com**（替换为你的信息）
+- 格式：**© Axton | axtonliu.ai**
 - 水印使用低调浅色（建议白色低透明度），不抢画面
 ```
 

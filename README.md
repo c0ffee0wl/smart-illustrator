@@ -291,6 +291,10 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
 
 See `references/slides-prompt-example.json` for a complete example.
 
+> **💡 Tip**: Batch image generation with JSON in Gemini doesn't have 100% success rate. If generation fails:
+> 1. Retry 1-3 times (usually succeeds)
+> 2. If retries fail, copy individual items from `pictures` array and generate one by one
+
 ---
 
 ## Configuration Files (Style Reuse)
@@ -532,6 +536,29 @@ Edit `styles/brand-colors.md`:
 ## Accent / 点缀色
 | Your Accent | `#XXXXXX` | Your accent color |
 ```
+
+### Option 3: Customize AI Prompts
+
+All AI prompts are centralized in `prompts/` directory for easy customization:
+
+```
+prompts/
+  ├── README.md              # Prompt management guide
+  ├── varied-styles.md       # Style hints for Varied mode
+  └── learning-analysis.md   # Cover learning analysis prompt
+```
+
+**To customize:**
+
+1. Edit the Markdown files directly (no code changes needed)
+2. Changes take effect immediately on next generation
+3. See `prompts/README.md` for detailed instructions
+
+**Difference from Style System:**
+
+- **Style files** (`styles/*.md`): Define core design rules (composition, colors, constraints)
+- **Prompt templates** (`prompts/*.md`): Define generation strategies (style hints, analysis focus)
+- Both work together: styles set the foundation, prompts add nuance
 
 ## Configuration Reference
 

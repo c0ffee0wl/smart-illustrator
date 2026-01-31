@@ -57,6 +57,10 @@ export function loadConfig(cwd: string = process.cwd()): Config {
       : USER_CONFIG_DIR;  // User config: resolve relative to user config dir
 
     config.references = config.references.map(ref => {
+      // Handle ~ (home directory) expansion
+      if (ref.startsWith('~/')) {
+        return join(homedir(), ref.slice(2));
+      }
       if (isAbsolute(ref)) {
         return ref;
       }

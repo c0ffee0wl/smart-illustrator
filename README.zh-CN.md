@@ -301,6 +301,10 @@ npx -y bun ~/.claude/skills/smart-illustrator/scripts/batch-generate.ts \
 
 完整示例见 `references/slides-prompt-example.json`。
 
+> **💡 使用提示**：在 Gemini 中使用 JSON 批量生成图片并非 100% 成功率。如果遇到生成失败，可以：
+> 1. 重试 1-3 次，通常能成功
+> 2. 如果多次重试仍失败，将 JSON 中的 `pictures` 逐条复制到 Gemini 单独生成
+
 ## 参考图模式（Style-lock）
 
 使用参考图引导生成图片的视觉风格，确保系列图片风格一致。
@@ -441,13 +445,21 @@ cd ~/my-course
 | 通用横版 | `landscape` | 1920×1080 | 16:9 |
 | 通用方形 | `square` | 1080×1080 | 1:1 |
 
-### 设计原则（详见 `references/cover-best-practices.md`）
+### 封面设计最佳实践
 
-1. **3 秒法则**：瞬间传达主题和价值
-2. **高对比**：深色背景 + 亮色主体
-3. **单一焦点**：只有一个视觉中心
-4. **文字精简**：3-6 字，粗体无衬线
-5. **好奇心缺口**：让人想点击
+本项目内置 YouTube 封面设计最佳实践（基于头部 YouTuber 研究）。
+
+**核心原则**：
+- **3 秒法则**：极短时间传达主题+价值+紧迫感
+- **高对比设计**：深背景+亮主体，明度差 ≥50%
+- **视觉焦点唯一**：一张封面只有一个重点
+- **文字精简有力**：3-6 字，粗体无衬线
+- **好奇心缺口**：让人不得不点
+
+**详细指南**：完整的设计原则、平台规格、A/B 测试清单见 [references/cover-best-practices.md](references/cover-best-practices.md)
+
+> 💡 这些实践由 [@axtonliu](https://twitter.com/axtonliu) 研究总结。
+> 如在项目中使用，欢迎注明来源并分享你的成果。
 
 ### 技术内容的视觉隐喻
 
@@ -458,6 +470,61 @@ cd ~/my-course
 | 自动化 | 齿轮组、流水线节点 |
 | 学习成长 | 种子→大树、阶梯上升 |
 | 问题解决 | 迷宫出口、拼图完成 |
+
+### 封面学习功能（持续优化）
+
+从高表现封面中学习，持续提升生成质量：
+
+```bash
+# 学习一张高表现封面
+/smart-illustrator --learn-cover ./my-best-thumbnail.png
+
+# 带备注学习（如 CTR 数据）
+/smart-illustrator --learn-cover ./cover.png --learn-note "CTR 8.5%,震惊表情效果好"
+
+# 查看学习记录
+/smart-illustrator --show-learnings
+
+# 生成多风格封面（自动应用学习模式）
+/smart-illustrator --mode cover --platform youtube --topic "Claude 4 评测" --varied
+```
+
+**学习工作流程**：
+
+1. **AI 自动分析**：构图、配色、文字使用、情绪表达、视觉焦点
+2. **提取成功模式**：记录值得复用的设计要素
+3. **持久化学习**：保存到 `~/.smart-illustrator/cover-learnings.md`
+4. **自动应用**：后续生成封面时自动加载学到的模式
+
+**Varied 模式（多风格生成）**：
+
+- 一次生成 2 张不同风格的封面供选择
+- **Candidate 1**：戏剧性高对比（强视觉冲击，适合娱乐/震惊类内容）
+- **Candidate 2**：极简专业（克制高级，适合技术/教育类内容）
+- 两种风格都会自动应用历史学习模式
+
+### Prompt 自定义（高级）
+
+所有 AI prompt 集中在 `prompts/` 目录，便于自定义和迭代：
+
+```
+prompts/
+  ├── README.md              # Prompt 管理说明
+  ├── varied-styles.md       # Varied 模式的两种风格提示
+  └── learning-analysis.md   # 封面学习分析 prompt
+```
+
+**修改 prompt**：
+
+- 直接编辑 Markdown 文件，无需改代码
+- 修改后自动生效，无需重启
+- 详细说明见 `prompts/README.md`
+
+**与风格系统关系**：
+
+- **风格文件**（`styles/*.md`）：定义核心设计规则（构图、配色、禁忌等）
+- **Prompt 模板**（`prompts/*.md`）：定义生成策略（风格提示、分析重点等）
+- 两者配合使用，风格文件是基础，prompt 模板是补充
 
 ---
 
@@ -614,12 +681,9 @@ mmdc -i input.mmd -o output.png -s 3 -w 1600 -b white
 **Mermaid 最佳实践：**
 
 本 Skill 遵循 [mermaid-visualizer](https://github.com/axtonliu/axton-obsidian-visual-skills) 的风格指南：
-
-- 使用 `subgraph id["显示名称"]` 格式处理带空格的组
-- 通过 ID 引用节点，而非显示文本
-- 避免 `数字. 空格` 模式（使用 `①②③` 或 `(1)(2)(3)` 代替）
-- 按层/类别应用一致的颜色编码
-- 在 subgraph 内使用 `direction LR` 实现水平布局
+- 使用 ID 引用节点，不使用显示文本
+- 避免 `数字. 空格` 模式（改用 `①②③` 或 `(1)(2)(3)`）
+- 按层级应用一致的颜色编码
 
 ### Gemini 引擎参数
 

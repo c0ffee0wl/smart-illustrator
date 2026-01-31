@@ -22,6 +22,7 @@
 import { writeFile, readFile, mkdir } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, resolve } from 'node:path';
 import { loadConfig, saveConfig, mergeConfig, type Config } from './config.js';
+import { analyzeCoverImage, saveLearning, getLearningsPrompt, loadLearnings } from './cover-learner.js';
 
 // Reference image interface
 interface ReferenceImage {
@@ -104,6 +105,39 @@ async function loadReferenceImages(paths: string[]): Promise<ReferenceImage[]> {
   }
 
   return images;
+}
+
+/**
+ * Load varied style hints from prompts/varied-styles.md
+ */
+async function loadVariedStyleHints(): Promise<[string, string]> {
+  const promptsDir = resolve(dirname(new URL(import.meta.url).pathname), '../prompts');
+  const variedStylesPath = resolve(promptsDir, 'varied-styles.md');
+
+  try {
+    const content = await readFile(variedStylesPath, 'utf-8');
+
+    // Extract Candidate 1 hint
+    const candidate1Match = content.match(/## Candidate 1:[\s\S]*?\n\n(\*\*风格提示[\s\S]*?)(?=\n\n##)/);
+    const candidate1 = candidate1Match
+      ? '\n\n' + candidate1Match[1].trim()
+      : '\n\n**风格提示（Candidate 1）**：dramatic & high-contrast（戏剧性高对比）\n- 使用强烈的明暗对比\n- 情绪张力强\n- 视觉冲击力优先';
+
+    // Extract Candidate 2 hint
+    const candidate2Match = content.match(/## Candidate 2:[\s\S]*?\n\n(\*\*风格提示[\s\S]*?)(?=\n\n---)/);
+    const candidate2 = candidate2Match
+      ? '\n\n' + candidate2Match[1].trim()
+      : '\n\n**风格提示（Candidate 2）**：minimal & professional（极简专业）\n- 极简构图，留白充足\n- 专业、克制、高级感\n- 信息清晰优先';
+
+    return [candidate1, candidate2];
+  } catch (error) {
+    console.warn('Warning: Failed to load varied style hints, using defaults');
+    // Fallback to default hints
+    return [
+      '\n\n**风格提示（Candidate 1）**：dramatic & high-contrast（戏剧性高对比）\n- 使用强烈的明暗对比\n- 情绪张力强\n- 视觉冲击力优先',
+      '\n\n**风格提示（Candidate 2）**：minimal & professional（极简专业）\n- 极简构图，留白充足\n- 专业、克制、高级感\n- 信息清晰优先'
+    ];
+  }
 }
 
 async function generateImageOpenRouter(
@@ -304,7 +338,7 @@ Options:
   -o, --output <path>       Output image path (default: generated.png)
   -m, --model <model>       Model to use
   --provider <provider>     API provider: openrouter (default) or gemini
-  --size <size>             Image size: default (~1.4K) or 2k (2048px)
+  --size <size>             Image size: 2k (2048px, default) or default (~1.4K)
   -h, --help                Show this help
 
 Style-lock Options (reference images):
@@ -319,6 +353,12 @@ Style Configuration (persistent settings):
   --save-config             Save current settings to project config (.smart-illustrator/config.json)
   --save-config-global      Save current settings to user config (~/.smart-illustrator/config.json)
   --no-config               Ignore config files, use only command-line arguments
+
+Cover Learning (learn from high-performing covers):
+  --learn-cover <path>      Analyze a cover image and save learnings
+  --learn-note <text>       Note for the learning (e.g., "CTR 8.5%")
+  --show-learnings          Show current cover learnings
+  --varied                  Generate varied styles (2 candidates with different approaches)
 
 Environment Variables (in order of priority):
   OPENROUTER_API_KEY        OpenRouter API key (preferred, has spending limits)
@@ -357,13 +397,17 @@ async function main() {
   let output = 'generated.png';
   let model: string | null = null;
   let provider: 'openrouter' | 'gemini' | null = null;
-  let size: 'default' | '2k' = 'default';
+  let size: 'default' | '2k' = '2k';  // Default to 2K resolution
   const refPaths: string[] = [];
   let refWeight = 1.0;
   let candidates = 1;
   let shouldSaveConfig = false;
   let saveConfigGlobal = false;
   let noConfig = false;
+  let learnCoverPath: string | null = null;
+  let learnNote: string | null = null;
+  let showLearnings = false;
+  let variedMode = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -396,6 +440,7 @@ async function main() {
         break;
       case '-r':
       case '--ref':
+      case '--reference':
         refPaths.push(args[++i]);
         break;
       case '--ref-weight':
@@ -415,7 +460,53 @@ async function main() {
       case '--no-config':
         noConfig = true;
         break;
+      case '--learn-cover':
+        learnCoverPath = args[++i];
+        break;
+      case '--learn-note':
+        learnNote = args[++i];
+        break;
+      case '--show-learnings':
+        showLearnings = true;
+        break;
+      case '--varied':
+        variedMode = true;
+        candidates = 2;  // Varied mode generates 2 different approaches
+        break;
     }
+  }
+
+  // Handle --show-learnings
+  if (showLearnings) {
+    const learnings = await loadLearnings();
+    if (!learnings) {
+      console.log('No cover learnings found yet.');
+      console.log('Learn from a high-performing cover:');
+      console.log('  npx -y bun generate-image.ts --learn-cover my-best-thumbnail.png');
+    } else {
+      const { readFile } = await import('node:fs/promises');
+      const { join } = await import('node:path');
+      const { homedir } = await import('node:os');
+      const learningsPath = join(homedir(), '.smart-illustrator', 'cover-learnings.md');
+      const content = await readFile(learningsPath, 'utf-8');
+      console.log(content);
+    }
+    process.exit(0);
+  }
+
+  // Handle --learn-cover
+  if (learnCoverPath) {
+    console.log('Analyzing cover image...');
+    const analysis = await analyzeCoverImage(learnCoverPath, learnNote || undefined);
+    if (analysis) {
+      await saveLearning(analysis);
+      console.log('\n✓ Learning completed successfully!');
+      console.log('\nNext time you generate a cover, these learnings will be automatically applied.');
+    } else {
+      console.error('Failed to analyze cover image');
+      process.exit(1);
+    }
+    process.exit(0);
   }
 
   // Load config unless --no-config is specified
@@ -490,6 +581,20 @@ async function main() {
     process.exit(1);
   }
 
+  // Load cover learnings if this is a cover generation task
+  const isCoverGeneration = prompt.toLowerCase().includes('cover') ||
+                            prompt.includes('封面') ||
+                            prompt.includes('youtube') ||
+                            prompt.includes('thumbnail');
+
+  if (isCoverGeneration) {
+    const learningsPrompt = await getLearningsPrompt();
+    if (learningsPrompt) {
+      prompt += learningsPrompt;
+      console.log('✓ Applied cover learnings from history');
+    }
+  }
+
   console.log(`Provider: ${provider}`);
   console.log(`Model: ${model}`);
   console.log(`Size: ${size}`);
@@ -516,14 +621,22 @@ async function main() {
     for (let i = 1; i <= candidates; i++) {
       const candidateOutput = candidates > 1 ? `${baseName}-${i}${ext}` : output;
 
-      console.log(candidates > 1 ? `\nGenerating candidate ${i}/${candidates}...` : '\nGenerating image...');
+      // Prepare prompt with varied style if in varied mode
+      let finalPrompt = prompt;
+      if (variedMode && isCoverGeneration) {
+        const styleHints = await loadVariedStyleHints();
+        finalPrompt = prompt + (styleHints[i - 1] || styleHints[0]);
+        console.log(candidates > 1 ? `\nGenerating candidate ${i}/${candidates} (${i === 1 ? 'Dramatic' : 'Minimal'})...` : '\nGenerating image...');
+      } else {
+        console.log(candidates > 1 ? `\nGenerating candidate ${i}/${candidates}...` : '\nGenerating image...');
+      }
 
       let result;
 
       if (provider === 'openrouter') {
-        result = await generateImageOpenRouter(prompt, model, apiKey, size);
+        result = await generateImageOpenRouter(finalPrompt, model, apiKey, size);
       } else {
-        result = await generateImageGemini(prompt, model, apiKey, size, references);
+        result = await generateImageGemini(finalPrompt, model, apiKey, size, references);
       }
 
       if (!result) {

@@ -1,6 +1,6 @@
 ---
 name: smart-illustrator
-description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片；(3) Cover 模式 - 生成高点击率的 YouTube/公众号封面图。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT、封面图、缩略图、thumbnail、cover、参考图、reference image、candidates、候选图、quality router、生成多张、多候选。
+description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) 文章配图模式 - 分析文章内容，识别最佳配图位置，生成插图；(2) PPT/Slides 模式 - 将课程脚本/文章转化为批量信息图 JSON prompt，供 Gemini 生成 PPT 幻灯片；(3) Cover 模式 - 生成高点击率的 YouTube/公众号封面图，支持封面学习和多风格生成。触发词：配图、插图、illustrate、为文章画图、生成配图、PPT、slides、幻灯片、生成PPT、生成幻灯片、课程PPT、封面图、缩略图、thumbnail、cover、参考图、reference image、candidates、候选图、quality router、生成多张、多候选、学习封面、cover learning、varied、多风格封面。
 ---
 
 # Smart Illustrator - 智能配图与 PPT 生成器
@@ -141,6 +141,37 @@ description: 智能配图与 PPT 信息图生成器。支持三种模式：(1) �
 1. 如果提供文章路径：分析标题和内容，提取核心概念
 2. 根据平台选择对应尺寸
 3. 加载 `styles/style-cover.md` 样式
+4. 自动加载历史学习模式（如果有 `~/.smart-illustrator/cover-learnings.md`）
+
+#### 封面学习功能（持续优化）
+
+从高表现封面中学习并持续改进生成质量：
+
+```bash
+# 学习一张高表现封面
+/smart-illustrator --learn-cover ./my-best-thumbnail.png
+
+# 带备注学习
+/smart-illustrator --learn-cover ./cover.png --learn-note "CTR 8.5%,效果很好"
+
+# 查看当前学习记录
+/smart-illustrator --show-learnings
+
+# 生成多风格封面（戏剧性 + 极简）
+/smart-illustrator --mode cover --platform youtube --topic "Claude 4 评测" --varied
+```
+
+**学习工作流程**：
+1. AI 分析封面图：构图、配色、文字使用、情绪、焦点
+2. 提取成功模式：值得复用的设计元素
+3. 记录到 `~/.smart-illustrator/cover-learnings.md`
+4. 后续生成封面时自动应用学到的模式
+
+**Varied 模式**：
+- 一次生成 2 张不同风格的封面
+- Candidate 1：戏剧性高对比（强视觉冲击）
+- Candidate 2：极简专业（克制高级）
+- 自动应用历史学习模式
 4. 生成封面图并保存为 `{文章名}-cover-{platform}.png`
 
 ### 参数说明

@@ -767,7 +767,7 @@ MIT 许可证 - 详见 [LICENSE](LICENSE)。
 
 ### 了解更多
 
-- [Claude Skills 万字长文：从指令到资产的系统化构建指南](https://www.axtonliu.ai/newsletters/ai-2/posts/claude-agent-skills-maps-framework) - 完整方法论
+- [Agent Skills 资源库](https://www.axtonliu.ai/agent-skills) - Claude Code Skills 合集与指南
 - [AI 精英周刊 Newsletter](https://www.axtonliu.ai/newsletters/ai-2) - 每周 AI 洞察
 - [免费 AI 课程](https://www.axtonliu.ai/axton-free-course) - 开始学习 AI
 

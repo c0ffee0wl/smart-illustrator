@@ -14,6 +14,14 @@ Intelligent article illustration Skill for Claude Code with **dual-engine system
 > - My primary focus is demonstrating how tools and systems work together, not maintaining this codebase.
 > - If you encounter issues, please submit a reproducible case (input + output file + steps to reproduce).
 
+## Why Smart Illustrator?
+
+Creating illustrations for articles is time-consuming: manual design takes hours, stock photos lack context, and generic AI tools don't understand article structure. Smart Illustrator combines intelligent position detection, dual-engine system (Mermaid + Gemini), and cover learning to generate contextual illustrations in minutes.
+
+**Who it's for:** Newsletter writers, YouTube creators, technical bloggers, course instructors.
+
+**When to use:** When you need high-quality illustrations for articles, YouTube thumbnails with best practices, or consistent visual style across content series.
+
 ## Features
 
 - **Dual Engine System**: Auto-selects Mermaid or Gemini based on content type

@@ -5,6 +5,8 @@
 
 **[中文文档](README.zh-CN.md)**
 
+![Dual Engine Architecture](assets/dual-engine-architecture.png)
+
 Intelligent article illustration Skill for Claude Code with **dual-engine system**: automatically selects Mermaid (for structured diagrams) or Gemini (for creative visuals) based on content type.
 
 ## Status

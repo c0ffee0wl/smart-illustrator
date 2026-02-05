@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Experimental](https://img.shields.io/badge/Status-Experimental-orange.svg)](#状态说明)
 
+![双引擎架构](assets/dual-engine-architecture.png)
+
 Claude Code 的智能文章配图 Skill，采用**双引擎系统**：根据内容类型自动选择 Mermaid（结构化图表）或 Gemini（创意视觉）。
 
 ## 状态说明

@@ -392,14 +392,16 @@ Generate high-CTR cover images for YouTube, WeChat, Twitter, and more. Built on 
 
 ### Supported Platforms
 
-| Platform | Code | Size | Aspect |
-|----------|------|------|--------|
-| YouTube | `youtube` | 1280×720 | 16:9 |
-| WeChat | `wechat` | 900×383 | 2.35:1 |
-| Twitter/X | `twitter` | 1200×628 | 1.91:1 |
-| Xiaohongshu | `xiaohongshu` | 1080×1440 | 3:4 |
-| Landscape | `landscape` | 1920×1080 | 16:9 |
-| Square | `square` | 1080×1080 | 1:1 |
+All outputs are **2K resolution** (e.g., ~2816×1584 for 16:9).
+
+| Platform | Code | Aspect Ratio |
+|----------|------|--------------|
+| YouTube | `youtube` | 16:9 |
+| WeChat | `wechat` | 2.35:1 |
+| Twitter/X | `twitter` | 1.91:1 |
+| Xiaohongshu | `xiaohongshu` | 3:4 |
+| Landscape | `landscape` | 16:9 |
+| Square | `square` | 1:1 |
 
 ### Design Principles (from `references/cover-best-practices.md`)
 

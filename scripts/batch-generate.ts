@@ -11,11 +11,11 @@
  *
  * Config format (unified with web version):
  *   {
- *     "instruction": "请为我绘制 N 张图片...",
+ *     "instruction": "Generate N images...",
  *     "batch_rules": { "total": N, "one_item_one_image": true, "aspect_ratio": "16:9" },
- *     "style": "完整的 style prompt 字符串...",
+ *     "style": "Complete style prompt string...",
  *     "pictures": [
- *       { "id": 1, "topic": "封面", "content": "..." },
+ *       { "id": 1, "topic": "Cover", "content": "..." },
  *       { "id": 2, "topic": "...", "content": "..." }
  *     ]
  *   }
@@ -99,11 +99,11 @@ function buildPromptFromUnified(picture: PictureConfig, style: string): string {
 
 ---
 
-请为以下内容生成一张信息图：
+Generate an infographic for the following content:
 
-**主题方向**: ${picture.topic}
+**Topic**: ${picture.topic}
 
-**内容**:
+**Content**:
 ${picture.content}`;
 }
 
@@ -212,18 +212,18 @@ Environment:
 
 Config File Format (Unified - same JSON as web version):
   {
-    "instruction": "请为我绘制 7 张图片（generate 7 images）...",
+    "instruction": "Generate 7 images...",
     "batch_rules": {
       "total": 7,
       "one_item_one_image": true,
       "aspect_ratio": "16:9",
       "do_not_merge": true
     },
-    "fallback": "如果无法一次生成全部图片...",
-    "style": "完整的 style prompt（从 styles/style-light.md 复制）...",
+    "fallback": "If unable to generate all images at once...",
+    "style": "Complete style prompt (copy from styles/style-light.md)...",
     "pictures": [
-      { "id": 1, "topic": "封面", "content": "Agent Skills 完全指南\\n\\n第1节：..." },
-      { "id": 2, "topic": "核心概念", "content": "Skills 是什么..." }
+      { "id": 1, "topic": "Cover", "content": "Agent Skills Guide\\n\\nSection 1: ..." },
+      { "id": 2, "topic": "Core Concept", "content": "What are Skills..." }
     ]
   }
 

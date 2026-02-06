@@ -3,8 +3,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Experimental](https://img.shields.io/badge/Status-Experimental-orange.svg)](#status)
 
-**[中文文档](README.zh-CN.md)**
-
 ![Dual Engine Architecture](assets/dual-engine-architecture.png)
 
 Intelligent article illustration Skill for Claude Code with **dual-engine system**: automatically selects Mermaid (for structured diagrams) or Gemini (for creative visuals) based on content type.
@@ -226,18 +224,18 @@ Use `pictures[]` array format with explicit batch rules:
 
 ```json
 {
-  "instruction": "请为我绘制 7 张图片（generate 7 images）。你是一位「信息图绘制者」。请逐条执行 pictures 数组：每个 id 对应 1 张独立的 16:9 信息图，严禁合并，严禁只输出文字描述。",
+  "instruction": "Generate 7 images. You are an 'infographic illustrator'. Execute the pictures array one by one: each id corresponds to 1 independent 16:9 infographic. Do not merge, do not output text descriptions only.",
   "batch_rules": {
     "total": 7,
     "one_item_one_image": true,
     "aspect_ratio": "16:9",
     "do_not_merge": true
   },
-  "fallback": "如果无法一次生成全部图片：请输出 7 条独立的单图绘图指令...",
+  "fallback": "If unable to generate all images at once: output 7 independent single-image drawing instructions...",
   "style": "[Complete style prompt - see styles/style-light.md]",
   "pictures": [
-    { "id": 1, "topic": "封面", "content": "Course Name\n\nSection Title\n\nLearning objectives..." },
-    { "id": 2, "topic": "核心概念", "content": "[Raw content]" }
+    { "id": 1, "topic": "Cover", "content": "Course Name\n\nSection Title\n\nLearning objectives..." },
+    { "id": 2, "topic": "Core Concept", "content": "[Raw content]" }
   ]
 }
 ```
@@ -246,9 +244,9 @@ Use `pictures[]` array format with explicit batch rules:
 
 1. **Use `pictures[]` array** - Array structure helps Gemini enter "loop execution" mode for batch generation.
 
-2. **Add image trigger phrase** - Must include "请为我绘制 N 张图片（generate N images）" to trigger image generation mode.
+2. **Add image trigger phrase** - Must include "generate N images" in the instruction to trigger image generation mode.
 
-3. **Role as "绘制者" not "导演"** - Use "信息图绘制者" (illustrator) not "视觉导演" (director) to trigger actual drawing behavior.
+3. **Role as "illustrator" not "director"** - Use "infographic illustrator" not "visual director" to trigger actual drawing behavior.
 
 4. **Separate instruction from style** - `instruction` = what to do + role; `style` = visual rules only.
 
@@ -263,15 +261,15 @@ For course/series content, the cover slide (`id: 1`) should include:
 ```json
 {
   "id": 1,
-  "topic": "封面",
-  "content": "Agent Skills 完全指南\n\n第4节：渐进式披露与 Description 优化\n\n学习目标：理解 Progressive Disclosure 机制"
+  "topic": "Cover",
+  "content": "Agent Skills Complete Guide\n\nSection 4: Progressive Disclosure & Description Optimization\n\nLearning objective: Understand the Progressive Disclosure mechanism"
 }
 ```
 
 Structure:
-- **Series name**: e.g., "Agent Skills 完全指南"
-- **Section number**: e.g., "第4节"
-- **Section title**: e.g., "渐进式披露与 Description 优化"
+- **Series name**: e.g., "Agent Skills Complete Guide"
+- **Section number**: e.g., "Section 4"
+- **Section title**: e.g., "Progressive Disclosure & Description Optimization"
 - **Learning objectives** (optional)
 
 ### Output Options (Applies to All Modes)
@@ -514,7 +512,6 @@ smart-illustrator/
 ├── SKILL.md                  # Skill definition (Claude Code entry)
 ├── CLAUDE.md                 # Project rules (style sync, JSON format)
 ├── README.md
-├── README.zh-CN.md           # Chinese documentation
 ├── LICENSE
 ├── scripts/
 │   ├── generate-image.ts     # Gemini single image generation
@@ -552,10 +549,10 @@ Want to use your own brand style?
 Edit `styles/brand-colors.md`:
 
 ```markdown
-## Core / 核心色
+## Core
 | Your Brand Color | `#XXXXXX` | Your main color |
 
-## Accent / 点缀色
+## Accent
 | Your Accent | `#XXXXXX` | Your accent color |
 ```
 

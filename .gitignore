@@ -21,7 +21,6 @@ Thumbs.db
 test-output/
 
 # Sensitive/private files
-references/文章自动配图工具.md
 
 # Internal development documents (kept locally, not for public repo)
 CLAUDE.md

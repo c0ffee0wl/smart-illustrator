@@ -121,24 +121,24 @@ async function loadVariedStyleHints(): Promise<[string, string]> {
     const content = await readFile(variedStylesPath, 'utf-8');
 
     // Extract Candidate 1 hint
-    const candidate1Match = content.match(/## Candidate 1:[\s\S]*?\n\n(\*\*风格提示[\s\S]*?)(?=\n\n##)/);
+    const candidate1Match = content.match(/## Candidate 1:[\s\S]*?\n\n(\*\*Style hint[\s\S]*?)(?=\n\n##)/);
     const candidate1 = candidate1Match
       ? '\n\n' + candidate1Match[1].trim()
-      : '\n\n**风格提示（Candidate 1）**：dramatic & high-contrast（戏剧性高对比）\n- 使用强烈的明暗对比\n- 情绪张力强\n- 视觉冲击力优先';
+      : '\n\n**Style hint (Candidate 1)**: dramatic & high-contrast\n- Use strong light-dark contrast\n- Strong emotional tension\n- Visual impact prioritized';
 
     // Extract Candidate 2 hint
-    const candidate2Match = content.match(/## Candidate 2:[\s\S]*?\n\n(\*\*风格提示[\s\S]*?)(?=\n\n---)/);
+    const candidate2Match = content.match(/## Candidate 2:[\s\S]*?\n\n(\*\*Style hint[\s\S]*?)(?=\n\n---)/);
     const candidate2 = candidate2Match
       ? '\n\n' + candidate2Match[1].trim()
-      : '\n\n**风格提示（Candidate 2）**：minimal & professional（极简专业）\n- 极简构图，留白充足\n- 专业、克制、高级感\n- 信息清晰优先';
+      : '\n\n**Style hint (Candidate 2)**: minimal & professional\n- Minimal composition, generous whitespace\n- Professional, restrained, premium feel\n- Information clarity prioritized';
 
     return [candidate1, candidate2];
   } catch (error) {
     console.warn('Warning: Failed to load varied style hints, using defaults');
     // Fallback to default hints
     return [
-      '\n\n**风格提示（Candidate 1）**：dramatic & high-contrast（戏剧性高对比）\n- 使用强烈的明暗对比\n- 情绪张力强\n- 视觉冲击力优先',
-      '\n\n**风格提示（Candidate 2）**：minimal & professional（极简专业）\n- 极简构图，留白充足\n- 专业、克制、高级感\n- 信息清晰优先'
+      '\n\n**Style hint (Candidate 1)**: dramatic & high-contrast\n- Use strong light-dark contrast\n- Strong emotional tension\n- Visual impact prioritized',
+      '\n\n**Style hint (Candidate 2)**: minimal & professional\n- Minimal composition, generous whitespace\n- Professional, restrained, premium feel\n- Information clarity prioritized'
     ];
   }
 }
@@ -281,7 +281,7 @@ async function generateImageGemini(
   // Add reference images first (style-lock)
   if (references.length > 0) {
     parts.push({
-      text: '以下图片是风格参考。请匹配它们的视觉风格、色彩搭配和艺术手法：'
+      text: 'The following images are style references. Please match their visual style, color palette, and artistic techniques:'
     });
 
     for (const ref of references) {
@@ -294,7 +294,7 @@ async function generateImageGemini(
     }
 
     parts.push({
-      text: '---\n请按照上述风格生成新图片：'
+      text: '---\nPlease generate a new image following the style above:'
     });
   }
 
@@ -608,7 +608,7 @@ async function main() {
 
   // Load cover learnings if this is a cover generation task
   const isCoverGeneration = prompt.toLowerCase().includes('cover') ||
-                            prompt.includes('封面') ||
+                            prompt.includes('cover image') ||
                             prompt.includes('youtube') ||
                             prompt.includes('thumbnail');
 

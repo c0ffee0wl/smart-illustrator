@@ -1,82 +1,58 @@
-# Brand Colors / 品牌色板
+# Brand Colors
 
-Axton 签名视觉风格色板。可替换为你自己的品牌色。
+Axton's signature visual style palette. Replace with your own brand colors.
 
-## Core / 核心色
+## Core
 
-| Color | Hex | Name | 用途 |
-|-------|-----|------|------|
-| Deep Space Violet | `#2F2B42` | 深空紫 | 主品牌色、标题 |
+| Color | Hex | Name | Usage |
+|-------|-----|------|-------|
+| Deep Space Violet | `#2F2B42` | - | Primary brand color, headings |
 
-## Accent / 点缀色
+## Accent
 
-| Color | Hex | Name | 用途 |
-|-------|-----|------|------|
-| Amber | `#F59E0B` | 琥珀橙 | 高亮、重点、CTA |
-| Sky Blue | `#38BDF8` | 天空蓝 | 辅助点缀 |
-| Vibrant Orange | `#FF5722` | 活力橙 | 仅用于 CTA 按钮 |
+| Color | Hex | Name | Usage |
+|-------|-----|------|-------|
+| Amber | `#F59E0B` | - | Highlights, key points, CTA |
+| Sky Blue | `#38BDF8` | - | Secondary accent |
+| Vibrant Orange | `#FF5722` | - | CTA buttons only |
 
-## Neutral / 中性色
+## Neutral
 
-| Color | Hex | Name | 用途 |
-|-------|-----|------|------|
-| Dark Slate | `#2d3748` | 暗板岩 | 深色模式卡片 |
-| Slate Gray | `#64748B` | 石板灰 | 浅色模式正文 |
-| Light Slate | `#94A3B8` | 浅石板 | 次要信息 |
+| Color | Hex | Name | Usage |
+|-------|-----|------|-------|
+| Dark Slate | `#2d3748` | - | Dark mode cards |
+| Slate Gray | `#64748B` | - | Light mode body text |
+| Light Slate | `#94A3B8` | - | Secondary information |
 
-## Background / 背景色
+## Background
 
-### 深色背景（封面图、深色模式优先使用）
+### Dark backgrounds (covers, dark mode preferred)
 
-| Color | Hex | Name | 用途 | 优先级 |
-|-------|-----|------|------|--------|
-| Pure Black | `#0A0A0A` | 纯黑 | 封面图首选，最高对比度 | **首选** |
-| Deep Space Violet | `#2F2B42` | 深空紫 | 品牌色背景，备选 | 备选 |
+| Color | Hex | Name | Usage | Priority |
+|-------|-----|------|-------|----------|
+| Pure Black | `#0A0A0A` | - | Cover image primary, maximum contrast | **Primary** |
+| Deep Space Violet | `#2F2B42` | - | Brand color background, alternative | Alternative |
 
-### 浅色背景（正文配图使用）
+### Light backgrounds (content illustrations)
 
-| Color | Hex | Name | 用途 |
-|-------|-----|------|------|
-| Light Gray | `#F8F9FA` | 浅灰白 | 浅色模式背景 |
-| Pure White | `#FFFFFF` | 纯白 | 卡片背景 |
+| Color | Hex | Name | Usage |
+|-------|-----|------|-------|
+| Light Gray | `#F8F9FA` | - | Light mode background |
+| Pure White | `#FFFFFF` | - | Card backgrounds |
 
-## 禁止使用
+## Prohibited
 
-- 蓝紫渐变（`#667eea` → `#764ba2`）
-- 彩虹渐变、紫粉渐变
-- 高饱和霓虹色（如 `#4AFAFF`）
-- 单边色条装饰
-
----
-
-## Watermark / 水印配置
-
-### 规则
-
-| 图片类型 | 水印 | 原因 |
-|---------|------|------|
-| **封面图（Cover）** | ❌ 不加 | 封面图有频道/账号标识，水印影响点击率 |
-| **正文配图** | ✅ 加 | 防止盗用，品牌曝光 |
-| **PPT/Slides** | ✅ 加 | 标注来源 |
-
-### 水印格式
-
-| 设置 | 值 |
-|------|-----|
-| 文字 | `© Axton \| axtonliu.ai` |
-| 位置 | 左下角 |
-| 浅色背景颜色 | 石板灰 `#64748B` |
-| 深色背景颜色 | 白色 30% 透明度 |
-
-**自定义**：替换为你的名字和网址即可。
+- Blue-purple gradients (`#667eea` to `#764ba2`)
+- Rainbow gradients, purple-pink gradients
+- High-saturation neon colors (e.g., `#4AFAFF`)
+- Single-edge color bar decorations
 
 ---
 
-## 自定义指南
+## Customization Guide
 
-如果你想替换为自己的品牌，请修改：
+To replace with your own brand:
 
-1. 核心色：选择一个主品牌色
-2. 点缀色：选择 2-3 个点缀色（建议一暖一冷）
-3. 水印：替换为你的名字和网址（或删除）
-4. 同步更新 `style-light.md` 和 `style-dark.md` 中的颜色值
+1. Core color: Choose one primary brand color
+2. Accent colors: Choose 2-3 accents (one warm, one cool recommended)
+3. Sync updates to `style-light.md` and `style-dark.md` color values

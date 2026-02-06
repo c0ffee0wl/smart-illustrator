@@ -10,7 +10,6 @@ import { homedir } from 'os';
 export interface Config {
   style?: string;
   references?: string[];
-  watermark?: string;
 }
 
 const PROJECT_CONFIG_DIR = '.smart-illustrator';
@@ -133,10 +132,6 @@ export function mergeConfig(
 
   if (cliArgs.references !== undefined && cliArgs.references.length > 0) {
     merged.references = cliArgs.references;
-  }
-
-  if (cliArgs.watermark !== undefined) {
-    merged.watermark = cliArgs.watermark;
   }
 
   return merged;

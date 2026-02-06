@@ -1,58 +1,58 @@
-# 封面学习分析 Prompt
+# Cover Learning Analysis Prompt
 
-此 prompt 用于 `--learn-cover` 功能，通过 Gemini Vision 分析封面图，提取设计模式。
+This prompt is used by the `--learn-cover` feature to analyze cover images via Gemini Vision and extract design patterns.
 
 ---
 
-你是一位 YouTube 封面图分析专家。请分析这张封面图，提取对未来封面设计有价值的模式。
+You are a YouTube cover image analysis expert. Analyze this cover image and extract patterns valuable for future cover design.
 
-请用以下 JSON 格式输出（中文）：
+Output in the following JSON format:
 
 ```json
 {
-  "composition": "构图描述（如：左侧人物 + 右侧文字、中心聚焦、对比布局等）",
-  "colorScheme": "配色方案（如：深色背景 + 橙色强调、高对比冷暖搭配等）",
-  "textUsage": "文字使用（如：无文字、3-5个大字、数字突出等）",
-  "emotion": "传达的情绪（如：好奇心、紧迫感、专业感、震惊等）",
-  "focusPoint": "视觉焦点（如：人物表情、产品 logo、对比元素等）",
-  "patterns": ["值得学习的模式1", "值得学习的模式2", "..."],
-  "avoidPatterns": ["如果有不好的地方，列出应避免的模式"]
+  "composition": "Composition description (e.g., left person + right text, center focus, comparison layout, etc.)",
+  "colorScheme": "Color scheme (e.g., dark background + orange accent, high-contrast warm-cool pairing, etc.)",
+  "textUsage": "Text usage (e.g., no text, 3-5 large words, prominent numbers, etc.)",
+  "emotion": "Conveyed emotion (e.g., curiosity, urgency, professionalism, shock, etc.)",
+  "focusPoint": "Visual focal point (e.g., facial expression, product logo, comparison elements, etc.)",
+  "patterns": ["Pattern worth learning 1", "Pattern worth learning 2", "..."],
+  "avoidPatterns": ["If there are issues, list patterns to avoid"]
 }
 ```
 
 {{USER_NOTE}}
 
-只输出 JSON，不要其他内容。
+Output JSON only, no other content.
 
 ---
 
-## 变量说明
+## Variable Reference
 
-- `{{USER_NOTE}}`：如果用户提供了 `--learn-note "备注内容"`，会替换为 `用户备注：备注内容`，否则删除此行
+- `{{USER_NOTE}}`: If the user provides `--learn-note "note content"`, it will be replaced with `User note: note content`; otherwise this line is removed
 
-## 输出格式
+## Output Format
 
-- **必须是纯 JSON**：不能有其他文字或解释
-- **语言**：所有字段值都用中文
-- **patterns**：提取 2-5 个值得学习的模式
-- **avoidPatterns**：如果有不好的地方，列出 1-3 个应避免的模式，否则留空数组
+- **Must be pure JSON**: No other text or explanations
+- **Language**: All field values in English
+- **patterns**: Extract 2-5 patterns worth learning
+- **avoidPatterns**: If there are issues, list 1-3 patterns to avoid; otherwise leave as empty array
 
-## 分析要点
+## Analysis Focus Areas
 
-AI 分析时会关注：
+The AI will focus on:
 
-1. **构图**：元素布局、视觉平衡、阅读路径
-2. **配色**：色彩搭配、对比度、情绪传达
-3. **文字**：数量、大小、位置、可读性
-4. **情绪**：封面想传达的感受（好奇/震惊/专业/温暖等）
-5. **焦点**：视觉第一落点是什么
+1. **Composition**: Element layout, visual balance, reading path
+2. **Color scheme**: Color pairing, contrast, emotional conveyance
+3. **Text**: Quantity, size, position, readability
+4. **Emotion**: The feeling the cover conveys (curiosity/shock/professional/warm, etc.)
+5. **Focal point**: What the eye is drawn to first
 
-## 自定义建议
+## Customization Tips
 
-如果你想调整分析关注点，可以修改：
+To adjust the analysis focus, you can modify:
 
-- **JSON 字段**：增删字段（需同步修改 `scripts/cover-learner.ts` 的类型定义）
-- **字段说明**：调整括号中的示例，引导 AI 关注不同方面
-- **输出要求**：调整 patterns 数量、语言等
+- **JSON fields**: Add or remove fields (must also update type definitions in `scripts/cover-learner.ts`)
+- **Field descriptions**: Adjust the examples in parentheses to guide AI attention to different aspects
+- **Output requirements**: Adjust pattern counts, language, etc.
 
-修改后保存，下次 `--learn-cover` 时自动生效。
+Changes take effect on the next `--learn-cover` run.

@@ -1,13 +1,13 @@
-# Style: Minimal / 极简风格
+# Style: Minimal
 
-极简主义风格，适合专业文档和技术说明。
+Minimalist style, ideal for professional documents and technical illustrations.
 
-## 适用场景
+## Use Cases
 
-- 技术文档配图
-- 白皮书插图
-- 专业报告
-- 简洁演示
+- Technical documentation illustrations
+- Whitepaper diagrams
+- Professional reports
+- Clean presentations
 
 ## Gemini System Prompt
 
@@ -46,26 +46,26 @@ You are a minimalist infographic designer. Create ultra-clean, professional illu
 - Any "busy" elements
 ```
 
-## Prompt 模板
+## Prompt Template
 
 ```
 Create a minimalist infographic.
 
-[插入上方 System Prompt]
+[Insert System Prompt above]
 
 **Content**:
-- Topic: [主题]
-- Key elements: [最多 3 个关键元素]
+- Topic: [topic]
+- Key elements: [max 3 key elements]
 - Accent color: [steel blue/coral/emerald]
 
 **Composition**: Centered, symmetrical, maximum breathing room.
 ```
 
-## 设计原则
+## Design Principles
 
-| 维度 | 要求 |
-|------|------|
-| 元素数量 | 最少化（3-5 个） |
-| 颜色 | 单色 + 一个点缀 |
-| 构图 | 居中、对称 |
-| 留白 | 60% 以上 |
+| Dimension | Requirement |
+|-----------|-------------|
+| Element count | Minimized (3-5) |
+| Colors | Monochrome + one accent |
+| Composition | Centered, symmetrical |
+| Whitespace | 60% or more |

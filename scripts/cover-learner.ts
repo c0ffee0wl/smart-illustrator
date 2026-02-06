@@ -64,7 +64,7 @@ async function loadLearningAnalysisPrompt(note?: string): Promise<string> {
 
     // Replace {{USER_NOTE}} variable
     if (note) {
-      content = content.replace('{{USER_NOTE}}', `用户备注：${note}`);
+      content = content.replace('{{USER_NOTE}}', `User note: ${note}`);
     } else {
       content = content.replace(/\n*{{USER_NOTE}}\n*/g, '');
     }
@@ -73,23 +73,23 @@ async function loadLearningAnalysisPrompt(note?: string): Promise<string> {
   } catch (error) {
     console.warn('Warning: Failed to load learning analysis prompt, using default');
     // Fallback to default prompt
-    return `你是一位 YouTube 封面图分析专家。请分析这张封面图，提取对未来封面设计有价值的模式。
+    return `You are a YouTube cover image analysis expert. Analyze this cover image and extract patterns valuable for future cover design.
 
-请用以下 JSON 格式输出（中文）：
+Output in the following JSON format:
 
 {
-  "composition": "构图描述（如：左侧人物 + 右侧文字、中心聚焦、对比布局等）",
-  "colorScheme": "配色方案（如：深色背景 + 橙色强调、高对比冷暖搭配等）",
-  "textUsage": "文字使用（如：无文字、3-5个大字、数字突出等）",
-  "emotion": "传达的情绪（如：好奇心、紧迫感、专业感、震惊等）",
-  "focusPoint": "视觉焦点（如：人物表情、产品 logo、对比元素等）",
-  "patterns": ["值得学习的模式1", "值得学习的模式2", "..."],
-  "avoidPatterns": ["如果有不好的地方，列出应避免的模式"]
+  "composition": "Composition description (e.g., left person + right text, center focus, comparison layout, etc.)",
+  "colorScheme": "Color scheme (e.g., dark background + orange accent, high-contrast warm-cool pairing, etc.)",
+  "textUsage": "Text usage (e.g., no text, 3-5 large words, prominent numbers, etc.)",
+  "emotion": "Conveyed emotion (e.g., curiosity, urgency, professionalism, shock, etc.)",
+  "focusPoint": "Visual focal point (e.g., facial expression, product logo, comparison elements, etc.)",
+  "patterns": ["Pattern worth learning 1", "Pattern worth learning 2", "..."],
+  "avoidPatterns": ["If there are issues, list patterns to avoid"]
 }
 
-${note ? `用户备注：${note}` : ''}
+${note ? `User note: ${note}` : ''}
 
-只输出 JSON，不要其他内容。`;
+Output JSON only, no other content.`;
   }
 }
 
@@ -121,7 +121,7 @@ function parseLearningsMarkdown(content: string): LearningsData {
   };
 
   // Extract distilled patterns
-  const highCTRMatch = content.match(/### 高 CTR 共性\n([\s\S]*?)(?=\n###|\n---|\n## |$)/);
+  const highCTRMatch = content.match(/### High CTR Patterns\n([\s\S]*?)(?=\n###|\n---|\n## |$)/);
   if (highCTRMatch) {
     distilledPatterns.highCTR = highCTRMatch[1]
       .split('\n')
@@ -129,7 +129,7 @@ function parseLearningsMarkdown(content: string): LearningsData {
       .map(line => line.slice(2).trim());
   }
 
-  const avoidMatch = content.match(/### 应避免的模式\n([\s\S]*?)(?=\n###|\n---|\n## |$)/);
+  const avoidMatch = content.match(/### Patterns to Avoid\n([\s\S]*?)(?=\n###|\n---|\n## |$)/);
   if (avoidMatch) {
     distilledPatterns.avoid = avoidMatch[1]
       .split('\n')
@@ -138,7 +138,7 @@ function parseLearningsMarkdown(content: string): LearningsData {
   }
 
   // Extract last updated
-  const lastUpdatedMatch = content.match(/\*\*最后更新\*\*：(.+)/);
+  const lastUpdatedMatch = content.match(/\*\*Last updated\*\*: (.+)/);
   const lastUpdated = lastUpdatedMatch ? lastUpdatedMatch[1].trim() : new Date().toISOString().split('T')[0];
 
   return { analyses, distilledPatterns, lastUpdated };
@@ -283,38 +283,38 @@ export async function saveLearning(analysis: CoverAnalysis): Promise<void> {
   // Build new analysis entry
   const newEntry = `
 ### ${analysis.date}: ${analysis.source}
-- **构图**: ${analysis.elements.composition}
-- **配色**: ${analysis.elements.colorScheme}
-- **文字**: ${analysis.elements.textUsage}
-- **情绪**: ${analysis.elements.emotion}
-- **焦点**: ${analysis.elements.focusPoint}
-- **学到的模式**:
+- **Composition**: ${analysis.elements.composition}
+- **Color scheme**: ${analysis.elements.colorScheme}
+- **Text usage**: ${analysis.elements.textUsage}
+- **Emotion**: ${analysis.elements.emotion}
+- **Focal point**: ${analysis.elements.focusPoint}
+- **Patterns learned**:
 ${analysis.patterns.map(p => `  - ${p}`).join('\n')}
-${analysis.avoidPatterns.length > 0 ? `- **应避免**:\n${analysis.avoidPatterns.map(p => `  - ${p}`).join('\n')}` : ''}
+${analysis.avoidPatterns.length > 0 ? `- **To avoid**:\n${analysis.avoidPatterns.map(p => `  - ${p}`).join('\n')}` : ''}
 `;
 
   // Build full content
   const today = new Date().toISOString().split('T')[0];
-  const fullContent = `# 封面图学习记录
+  const fullContent = `# Cover Image Learning Log
 
-**最后更新**：${today}
-
----
-
-## 提炼的模式（自动汇总）
-
-### 高 CTR 共性
-${distilledPatterns.highCTR.map(p => `- ${p}`).join('\n') || '- （暂无记录）'}
-
-### 应避免的模式
-${distilledPatterns.avoid.map(p => `- ${p}`).join('\n') || '- （暂无记录）'}
+**Last updated**: ${today}
 
 ---
 
-## 学习记录
+## Distilled Patterns (auto-summarized)
+
+### High CTR Patterns
+${distilledPatterns.highCTR.map(p => `- ${p}`).join('\n') || '- (No records yet)'}
+
+### Patterns to Avoid
+${distilledPatterns.avoid.map(p => `- ${p}`).join('\n') || '- (No records yet)'}
+
+---
+
+## Learning Log
 ${newEntry}
-${existingContent.includes('## 学习记录')
-  ? existingContent.split('## 学习记录')[1]
+${existingContent.includes('## Learning Log')
+  ? existingContent.split('## Learning Log')[1]
   : ''}
 `;
 
@@ -331,16 +331,16 @@ export async function getLearningsPrompt(): Promise<string | null> {
     return null;
   }
 
-  let prompt = '\n\n## 从历史高表现封面学到的模式（请参考）\n\n';
+  let prompt = '\n\n## Patterns Learned from High-Performing Covers (for reference)\n\n';
 
   if (learnings.distilledPatterns.highCTR.length > 0) {
-    prompt += '### 推荐的模式\n';
+    prompt += '### Recommended Patterns\n';
     prompt += learnings.distilledPatterns.highCTR.map(p => `- ${p}`).join('\n');
     prompt += '\n\n';
   }
 
   if (learnings.distilledPatterns.avoid.length > 0) {
-    prompt += '### 应避免的模式\n';
+    prompt += '### Patterns to Avoid\n';
     prompt += learnings.distilledPatterns.avoid.map(p => `- ${p}`).join('\n');
     prompt += '\n';
   }
@@ -362,7 +362,7 @@ Usage:
 
 Examples:
   npx -y bun cover-learner.ts my-best-thumbnail.png
-  npx -y bun cover-learner.ts cover.png --note "CTR 8.5%, 这个封面效果很好"
+  npx -y bun cover-learner.ts cover.png --note "CTR 8.5%, this cover performed well"
   npx -y bun cover-learner.ts --show
 `);
     process.exit(0);
@@ -391,16 +391,16 @@ Examples:
   if (analysis) {
     await saveLearning(analysis);
 
-    console.log('\n--- 分析结果 ---');
-    console.log(`构图: ${analysis.elements.composition}`);
-    console.log(`配色: ${analysis.elements.colorScheme}`);
-    console.log(`文字: ${analysis.elements.textUsage}`);
-    console.log(`情绪: ${analysis.elements.emotion}`);
-    console.log(`焦点: ${analysis.elements.focusPoint}`);
-    console.log('\n学到的模式:');
+    console.log('\n--- Analysis Results ---');
+    console.log(`Composition: ${analysis.elements.composition}`);
+    console.log(`Color scheme: ${analysis.elements.colorScheme}`);
+    console.log(`Text usage: ${analysis.elements.textUsage}`);
+    console.log(`Emotion: ${analysis.elements.emotion}`);
+    console.log(`Focal point: ${analysis.elements.focusPoint}`);
+    console.log('\nPatterns learned:');
     analysis.patterns.forEach(p => console.log(`  ✓ ${p}`));
     if (analysis.avoidPatterns.length > 0) {
-      console.log('\n应避免:');
+      console.log('\nTo avoid:');
       analysis.avoidPatterns.forEach(p => console.log(`  ✗ ${p}`));
     }
   }
